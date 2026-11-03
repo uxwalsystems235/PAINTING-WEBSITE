@@ -3,7 +3,7 @@ const express = require('express')
 const cors = require('cors')
 const { assertConfig } = require('./lib/secret')
 const { HttpError } = require('./lib/httpError')
-const { securityHeaders, rejectBadKeys, clientOrigin } = require('./middleware/security')
+const { securityHeaders, rejectBadKeys, clientOrigins } = require('./middleware/security')
 const { uploadDir } = require('./routes/admin/media')
 
 // Builds the Express app (no DB connection, no listening) so tests can run it in-process.
@@ -19,7 +19,7 @@ function createApp() {
 
   app.use(securityHeaders)
   app.use(cors({
-    origin: clientOrigin(),
+    origin: clientOrigins(),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'X-Requested-With'],

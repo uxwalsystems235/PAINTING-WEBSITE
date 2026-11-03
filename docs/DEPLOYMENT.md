@@ -57,7 +57,7 @@ Use a process manager so the backend restarts after a crash or reboot (for examp
 | `NODE_ENV` | none | `production`. Adds `Secure` to the login cookie and makes `ADMIN_SECRET` mandatory |
 | `PORT` | `5000` | Any free port; the reverse proxy forwards to it |
 | `MONGODB_URI` | `mongodb://127.0.0.1:27017/kalpana` | Your real connection string |
-| `CLIENT_ORIGIN` | `http://localhost:5173` | The public site origin: scheme + host (+ port), no path, no trailing slash. Example `https://example.com` |
+| `CLIENT_ORIGIN` | `http://localhost:5173` | The public site origin: scheme + host (+ port), no path, no trailing slash. Example `https://example.com`. Several origins may be listed separated by commas, e.g. `http://localhost:5173,https://example.com` |
 | `ADMIN_SECRET` | none | At least 32 random characters. See 4.2 |
 | `UPLOAD_DIR` | `Backend/uploads` | An absolute path outside the code folder is easier to back up and survives redeploys |
 | `TRUST_PROXY` | off | `1` when exactly one reverse proxy sits in front. See 4.3 |
@@ -225,6 +225,28 @@ Points that matter:
 * Then update everything that points at it: the proxy's `proxy_pass`, and for local development `VITE_API_URL=http://localhost:5100/api` (restart `npm run dev`). In production with the same-origin setup the browser only sees `https://example.com/api`, so the number does not matter to visitors.
 * Two copies of the backend (for example an old process left running) cannot share a port; stop the old one first.
 * The Vite dev server uses port 5173, which is also what `CLIENT_ORIGIN` expects in development. If Vite picks another port because 5173 is taken, set `CLIENT_ORIGIN` to the new one or admin actions will be refused with "Origin not allowed".
+
+### 6.3 Hosting the site on Vercel and the API on Render
+
+The two services live on different domains (`*.vercel.app` and `*.onrender.com`), and browsers do not send the `SameSite=Strict` login cookie across sites. The fix is to let Vercel proxy the API, so the browser only ever talks to the Vercel domain. `Frontend/vercel.json` already does this; replace the Render address with yours:
+
+```json
+{ "source": "/api/:path*", "destination": "https://YOUR-SERVICE.onrender.com/api/:path*" },
+{ "source": "/uploads/:path*", "destination": "https://YOUR-SERVICE.onrender.com/uploads/:path*" }
+```
+
+Then set the environment variables in each dashboard and redeploy both services:
+
+| Where | Variable | Value |
+|---|---|---|
+| Vercel | `VITE_API_URL` | `https://YOUR-SITE.vercel.app/api` (the Vercel address, not the Render one) |
+| Render | `CLIENT_ORIGIN` | `https://YOUR-SITE.vercel.app` (add `,http://localhost:5173` if you also develop locally against the hosted API) |
+| Render | `NODE_ENV` | `production` |
+| Render | `ADMIN_SECRET` | at least 32 random characters (section 4.2) |
+| Render | `TRUST_PROXY` | `2` (Vercel and Render each add one proxy hop) |
+| Render | `MONGODB_URI` | your Atlas connection string |
+
+Vercel environment variables are baked in at build time, so changing `VITE_API_URL` needs a new deployment. Uploaded images on Render's free plan are lost on every redeploy and restart; use a persistent disk (`UPLOAD_DIR` pointing at it) or keep images under `Frontend/public/art`.
 
 ## 7. Updating the site later
 

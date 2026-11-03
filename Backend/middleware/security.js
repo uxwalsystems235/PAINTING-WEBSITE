@@ -1,6 +1,7 @@
 const { hasBadKeys, isObj } = require('../lib/validate')
 
-const clientOrigin = () => process.env.CLIENT_ORIGIN || 'http://localhost:5173'
+// CLIENT_ORIGIN may list several origins separated by commas (e.g. a local dev origin and the live site).
+const clientOrigins = () => (process.env.CLIENT_ORIGIN || 'http://localhost:5173').split(',').map((o) => o.trim()).filter(Boolean)
 
 // Tiny hand-written security headers.
 function securityHeaders(req, res, next) {
@@ -20,7 +21,7 @@ function csrf(req, res, next) {
   if (SAFE.has(req.method)) return next()
   if (req.get('X-Requested-With') !== 'kj-admin') return res.status(403).json({ error: 'Missing required request header.' })
   const origin = req.get('Origin')
-  if (origin !== undefined && origin !== clientOrigin()) return res.status(403).json({ error: 'Origin not allowed.' })
+  if (origin !== undefined && !clientOrigins().includes(origin)) return res.status(403).json({ error: 'Origin not allowed.' })
   next()
 }
 
@@ -36,4 +37,4 @@ function rejectBadKeys(req, res, next) {
   next()
 }
 
-module.exports = { securityHeaders, csrf, rejectBadKeys, clientOrigin }
+module.exports = { securityHeaders, csrf, rejectBadKeys, clientOrigins }

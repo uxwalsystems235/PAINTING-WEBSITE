@@ -22,7 +22,7 @@ npm run dev                 # or: npm start
 |---|---|
 | `PORT` | HTTP port (default 5000) |
 | `MONGODB_URI` | Mongo connection string |
-| `CLIENT_ORIGIN` | The website origin, e.g. `https://example.com`. The only origin allowed by CORS and by the admin CSRF check |
+| `CLIENT_ORIGIN` | The website origin, e.g. `https://example.com` (or several, comma-separated). The only origins allowed by CORS and by the admin CSRF check |
 | `ADMIN_SECRET` | >= 32 random characters; signs admin cookies. **Required** when `NODE_ENV=production` (the server refuses to start without it). In development a random per-process secret is used (sessions end on restart) and a warning is logged |
 | `UPLOAD_DIR` | Where uploaded images are stored (default `Backend/uploads`) |
 | `NODE_ENV` | `production` adds the `Secure` flag to the session cookie |

@@ -87,7 +87,7 @@ Backend (`Backend/.env`, template in `Backend/.env.example`). Full explanations 
 |---|---|
 | `PORT` | Default 5000 |
 | `MONGODB_URI` | Default `mongodb://127.0.0.1:27017/kalpana` |
-| `CLIENT_ORIGIN` | The exact website origin, e.g. `https://example.com` |
+| `CLIENT_ORIGIN` | The exact website origin, e.g. `https://example.com` (comma-separate several) |
 | `ADMIN_SECRET` | 32+ random characters; required when `NODE_ENV=production` |
 | `NODE_ENV` | `production` makes the login cookie `Secure` |
 | `UPLOAD_DIR` | Image folder (default `Backend/uploads`) |

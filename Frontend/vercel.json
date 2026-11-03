@@ -1,10 +1,8 @@
-
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
+    { "source": "/api/:path*", "destination": "https://painting-website-t97l.onrender.com/api/:path*" },
+    { "source": "/uploads/:path*", "destination": "https://painting-website-t97l.onrender.com/uploads/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

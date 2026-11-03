@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { CartProvider } from './context/CartContext'
 import { ContentProvider } from './lib/ContentContext'
+import { LangProvider } from './lib/LangContext'
 import Layout from './components/Layout'
 import Home from './pages/Home'
 
@@ -10,6 +11,7 @@ import Home from './pages/Home'
 const AdminApp = lazy(() => import('./admin/AdminApp'))
 const About = lazy(() => import('./pages/About'))
 const Art = lazy(() => import('./pages/Art'))
+const Cause = lazy(() => import('./pages/Cause'))
 const ArtworkDetail = lazy(() => import('./pages/ArtworkDetail'))
 const Poetry = lazy(() => import('./pages/Poetry'))
 const PoemDetail = lazy(() => import('./pages/PoemDetail'))
@@ -39,6 +41,7 @@ export default function App() {
     )
   }
   return (
+    <LangProvider>
     <ContentProvider>
     <CartProvider>
       <BrowserRouter>
@@ -49,6 +52,7 @@ export default function App() {
               <Route path="about" element={<About />} />
               <Route path="art" element={<Art />} />
               <Route path="art/:slug" element={<ArtworkDetail />} />
+              <Route path="cause" element={<Cause />} />
               <Route path="poetry" element={<Poetry />} />
               <Route path="poetry/:slug" element={<PoemDetail />} />
               <Route path="cart" element={<Cart />} />
@@ -68,5 +72,6 @@ export default function App() {
       </BrowserRouter>
     </CartProvider>
     </ContentProvider>
+    </LangProvider>
   )
 }

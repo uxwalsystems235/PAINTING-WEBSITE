@@ -108,22 +108,28 @@ The five statuses are: Pending payment, Paid, Dispatched, Delivered, Cancelled.
 
 ## Messages and newsletter sign-ups (Enquiries)
 
-Click **Enquiries**. There are three tabs:
+Click **Enquiries**. There are six tabs:
 
 * **General**: questions from the Contact page.
+* **Acquisitions**: someone asking about buying a particular painting (the painting is shown).
+* **Collaboration**: schools, trusts or volunteers who want to work with you on children's welfare.
+* **Donations**: receipt requests from people who gave directly (amount and transaction reference are shown). Check the payment in your bank or UPI app, then send the receipt yourself.
 * **Custom art**: commission requests (style, size and budget are shown).
 * **Newsletter**: email addresses of people who signed up.
 
-For the first two, reply to the person yourself using their email address, then tick **Handled** so you can tell what is still new. Use the **Show** box to see only "Not handled" messages. **Delete** removes one permanently.
+For everything except the newsletter, reply to the person yourself using their email address, then tick **Handled** so you can tell what is still new. Use the **Show** box to see only "Not handled" messages. **Delete** removes one permanently.
 
-On the **Newsletter** tab, **Export CSV** downloads the list of email addresses as a file you can open in Excel. The website does not send newsletters itself; you would use the list with another service.
+**Export CSV** downloads the current tab as a file you can open in Excel. On the **Newsletter** tab it is the list of email addresses. The website does not send newsletters itself; you would use the list with another service.
 
 ---
 
 ## How to change the words on the website
 
 1. Click **Site content**.
-2. The page is split into groups (Site-wide, Home, Gallery, Poetry, About, Checkout, Pages). The links at the top jump to each group.
+2. The page is split into groups (Site-wide, Home, Gallery, Poetry, About, Cause, Donations, Checkout, Pages, Marathi). The links at the top jump to each group.
+   * **Cause** is the page that explains where the money goes: impact figures, the four programmes, the story, how a purchase helps, ways to help. Only put in numbers you can stand behind.
+   * **Donations** holds your bank details and UPI ID. The website shows them (and a UPI QR code) only once they are filled in; until then it shows the "details coming soon" text. Only promise an 80G receipt if the receiving trust actually has 80G registration.
+   * **Marathi** holds the Marathi versions of the texts. Visitors can switch the whole site to Marathi from the menu; a Marathi box that is left empty simply shows the English text. The Marathi wording was drafted by the developers and should be read through by you before launch.
 3. Find the text you want to change and type in the box. Some boxes are lists (for example the FAQs or the three pillars on the home page): use **Add item**, **Up**, **Down** and **Remove** inside them.
 4. Boxes you have changed show **Unsaved**. When ready, press the **Save ... changes** button at the bottom of the page. A message tells you the website now shows your changes (it may take up to a minute to appear for visitors).
 5. Changed your mind? **Discard changes** throws away everything you have not saved yet. For a box you saved earlier (marked **Edited**), **Reset to default** brings back the original wording.

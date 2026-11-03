@@ -1,0 +1,48 @@
+/* Cause page. Tokens and shared scaffolding (.section, .container, .eyebrow, .btn) live in index.css. */
+.cause-stats { display: grid; gap: 1.5rem; margin-top: clamp(3rem, 6vw, 4.5rem); padding-top: 2rem; border-top: 1px solid var(--fg); }
+@media (min-width: 560px) { .cause-stats { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1000px) { .cause-stats { grid-template-columns: repeat(4, 1fr); gap: 2.5rem; } }
+.stat-value { display: block; font: 500 clamp(2.75rem, 5vw, 4.25rem)/1 var(--font-serif); letter-spacing: -0.02em; color: var(--terracotta); }
+.stat-label { display: block; margin-top: 0.6rem; color: var(--mut); font-size: 0.9375rem; line-height: 1.5; max-width: 16rem; }
+
+.cause-block { margin-top: var(--section-space); }
+.cause-cards { display: grid; gap: 2rem; }
+@media (min-width: 700px) { .cause-cards { grid-template-columns: repeat(2, 1fr); gap: 2.5rem 3rem; } }
+@media (min-width: 1100px) { .cause-cards { grid-template-columns: repeat(4, 1fr); } }
+.cause-card { border-top: 1px solid var(--fg); padding-top: 1.25rem; }
+.cause-card .num, .steps .num { display: block; font: 500 0.6875rem/1 var(--font-sans); letter-spacing: 0.22em; color: var(--accent); margin-bottom: 1rem; }
+.cause-card h3 { font-size: clamp(1.5rem, 2.2vw, 1.85rem); }
+.cause-card p { margin-top: 0.8rem; color: var(--mut); }
+.cause-card .metric { margin-top: 1rem; font: 500 0.6875rem/1.4 var(--font-sans); letter-spacing: 0.18em; text-transform: uppercase; color: var(--fg); }
+
+.cause-story { margin-top: var(--section-space); display: grid; gap: 2rem; }
+@media (min-width: 880px) { .cause-story { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 5rem; } }
+.cause-story h2 { font-size: clamp(2rem, 3.8vw, 3rem); max-width: 14ch; }
+.cause-story .prose p { font-family: var(--font-serif); font-size: 1.2rem; line-height: 1.75; color: var(--mut); }
+.cause-story .prose p + p { margin-top: 1.25rem; }
+.cause-story .prose p:first-child { color: var(--fg); }
+
+.cause-how { margin-top: var(--section-space); background: var(--band); color: var(--on-band); padding: var(--section-space) 6vw; margin-left: -6vw; margin-right: -6vw; }
+.cause-how .eyebrow { color: var(--gold); }
+.cause-how h2 { font-size: clamp(2rem, 3.8vw, 3rem); color: var(--on-band); max-width: 18ch; }
+.steps { list-style: none; margin: 2.5rem 0 0; padding: 0; display: grid; gap: 2rem; counter-reset: step; }
+@media (min-width: 700px) { .steps { grid-template-columns: repeat(2, 1fr); gap: 2.5rem 3rem; } }
+@media (min-width: 1100px) { .steps { grid-template-columns: repeat(4, 1fr); } }
+.steps li { border-top: 1px solid var(--band-line); padding-top: 1.25rem; }
+.steps .num { color: var(--gold); font-size: 1.5rem; font-family: var(--font-serif); letter-spacing: 0; }
+.steps h3 { font-size: 1.35rem; color: var(--on-band); }
+.steps p { margin-top: 0.7rem; color: var(--on-band-mut); font-size: 0.9375rem; }
+
+.cause-ways { display: grid; gap: 1.5rem; }
+@media (min-width: 700px) { .cause-ways { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1100px) { .cause-ways { grid-template-columns: repeat(4, 1fr); } }
+.way { display: block; padding: 1.5rem; border: 1px solid var(--line); background: var(--surface); color: inherit; text-decoration: none; transition: border-color calc(0.4s * var(--motion-speed)); }
+.way:hover, .way:focus-visible { border-color: var(--fg); }
+.way-head { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.way h3 { font-size: 1.4rem; }
+.way .arrow { flex: none; transition: transform calc(0.45s * var(--motion-speed)) cubic-bezier(0.22, 0.61, 0.36, 1); }
+.way:hover .arrow, .way:focus-visible .arrow { transform: translateX(6px); }
+.way p { margin-top: 0.75rem; color: var(--mut); font-size: 0.9375rem; }
+
+.cause-donate { margin-top: var(--section-space); scroll-margin-top: 6rem; }
+.cause-note { margin-top: 3rem; color: var(--mut); font-size: 0.9375rem; max-width: 40rem; }

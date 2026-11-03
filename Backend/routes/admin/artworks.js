@@ -12,10 +12,10 @@ const { body, str, int, bool, oid, isObj, SLUG } = require('../../lib/validate')
 const router = express.Router()
 
 const EDITABLE = ['title', 'type', 'medium', 'dimensions', 'price', 'available', 'dispatch', 'description', 'ar',
-  'image', 'imageAlt', 'poemSlug', 'variants', 'published', 'order']
+  'series', 'year', 'titleMr', 'image', 'imageAlt', 'poemSlug', 'variants', 'published', 'order']
 const DEFAULTS = {
   medium: '', dimensions: '', price: null, available: true, dispatch: '', description: '', ar: 1,
-  image: null, imageAlt: '', poemSlug: null, variants: [], published: true,
+  series: '', year: '', titleMr: '', image: null, imageAlt: '', poemSlug: null, variants: [], published: true,
 }
 const IMAGE = /^\/(uploads|art)\/[A-Za-z0-9._\-/]*$/
 
@@ -30,6 +30,9 @@ async function validate(src) {
   out.available = bool(src.available, 'available')
   out.dispatch = str(src.dispatch, 'dispatch', { max: 40 })
   out.description = str(src.description, 'description', { max: 2000 })
+  out.series = str(src.series, 'series', { max: 80 })
+  out.year = str(src.year, 'year', { max: 12 })
+  out.titleMr = str(src.titleMr, 'titleMr', { max: 120 })
   if (typeof src.ar !== 'number' || !Number.isFinite(src.ar) || src.ar < 0.3 || src.ar > 3) throw bad('ar must be a number between 0.3 and 3.')
   out.ar = src.ar
   if (src.image === null) out.image = null

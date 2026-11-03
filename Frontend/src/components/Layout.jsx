@@ -1,36 +1,84 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { inr } from '../data/artworks'
 import { safeUrl } from '../data/shipping'
 import { useContent, useSettings } from '../lib/ContentContext'
+import { useLang } from '../lib/LangContext'
+import { UiProvider } from '../lib/UiContext'
+import DonatePanel from './DonatePanel'
 import { SvgDefs } from './PaintingArt'
 import '../site.css'
 
-const links = [
-  ['/art', 'Gallery'],
-  ['/about', 'About'],
-  ['/poetry', 'Art & Poetry'],
-  ['/#purpose', 'Our Purpose'],
-  ['/contact', 'Contact'],
-]
+// Links sit either side of the centred name, museum-style; on small screens they collapse into one menu.
+const LEFT = [['/art', 'nav.gallery'], ['/about', 'nav.about'], ['/poetry', 'nav.poetry']]
+const RIGHT = [['/cause', 'nav.cause'], ['/contact', 'nav.contact']]
 
-function Nav() {
+function NavLinks({ links, pathname, t }) {
+  return links.map(([to, key]) => (
+    <Link key={to} to={to} aria-current={pathname === to ? 'page' : undefined}>{t(key)}</Link>
+  ))
+}
+
+function LangToggle({ className = '' }) {
+  const { lang, toggle, t } = useLang()
+  // The button names the language it switches TO, in that language.
+  return (
+    <button type="button" className={'lang-btn ' + className} onClick={toggle} lang={lang === 'mr' ? 'en' : 'mr'} aria-label={t('lang.switch')} title={t('lang.switch')}>
+      {t('lang.other')}
+    </button>
+  )
+}
+
+function Nav({ openDonate }) {
   const { count, saved, openDrawer } = useCart()
+  const { pathname } = useLocation()
+  const { t } = useLang()
   const [open, setOpen] = useState(false)
+  // Over the home hero the bar is transparent until the visitor scrolls (see .nav.glass in site.css).
+  const [scrolled, setScrolled] = useState(() => window.scrollY > 24)
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24)
+    addEventListener('scroll', onScroll, { passive: true })
+    return () => removeEventListener('scroll', onScroll)
+  }, [])
+  const glass = pathname === '/' && !scrolled && !open
+
+  // The mobile menu closes when a link inside it is chosen (click handler below) and on Escape.
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open])
 
   return (
-    <nav className="nav" aria-label="Main">
-      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:bg-band focus:text-ivory focus:px-3 focus:py-2">Skip to content</a>
+    <nav className={"nav" + (glass ? " glass" : "")} aria-label="Main">
+      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:bg-ivory focus:text-charcoal focus:px-3 focus:py-2 focus:z-50">{t('nav.skip')}</a>
+      <div className="nav-left">
+        <button className="menu-btn" onClick={() => setOpen(!open)} aria-expanded={open} aria-controls="mobile-menu" aria-label={open ? t('nav.closeMenu') : t('nav.openMenu')}>{open ? '✕' : '☰'}</button>
+        <div className="links"><NavLinks links={LEFT} pathname={pathname} t={t} /></div>
+      </div>
       <Link to="/" className="logo">Kalpana Jagtap</Link>
-      <div className={'links' + (open ? ' open' : '')} onClick={(e) => { if (e.target.closest('a')) setOpen(false) }}>
-        {links.map(([to, label]) => <Link key={to} to={to}>{label}</Link>)}
+      <div className="nav-right">
+        <div className="links"><NavLinks links={RIGHT} pathname={pathname} t={t} /></div>
+        <div className="icons">
+          <LangToggle className="desk" />
+          <button type="button" className="support" onClick={openDonate}>{t('nav.support')}</button>
+          <span className="tag">{t('nav.wishlist')}<span className="count">{saved.length}</span></span>
+          <button onClick={openDrawer}>{t('nav.cart')}<span className="count">{count}</span></button>
+        </div>
       </div>
-      <div className="icons">
-        <span className="p-1">Wishlist {saved.length}</span>
-        <button onClick={openDrawer}>Cart {count}</button>
-        <button className="menu-btn" onClick={() => setOpen(!open)} aria-expanded={open} aria-label={open ? 'Close menu' : 'Open menu'}>{open ? '✕' : '☰'}</button>
-      </div>
+      {open && (
+        <div id="mobile-menu" className="mobile-menu" onClick={(e) => { if (e.target.closest('a')) setOpen(false) }}>
+          <NavLinks links={[...LEFT, ...RIGHT]} pathname={pathname} t={t} />
+          <Link to="/art">{t('nav.wishlist')} ({saved.length})</Link>
+          <div className="mobile-row">
+            <button type="button" className="btn" onClick={() => { setOpen(false); openDonate() }}>{t('nav.support')}</button>
+            <LangToggle />
+          </div>
+        </div>
+      )}
     </nav>
   )
 }
@@ -38,59 +86,101 @@ function Nav() {
 function CartDrawer() {
   const { items, subtotal, drawerOpen, closeDrawer, remove } = useCart()
   const { checkoutEnabled } = useSettings()
+  const { t } = useLang()
   return (
-    <aside className={'drawer' + (drawerOpen ? ' open' : '')} aria-label="Cart" aria-hidden={!drawerOpen}>
-      <button className="x" onClick={closeDrawer}>Close</button>
-      <h3>Your cart</h3>
+    <aside className={'drawer' + (drawerOpen ? ' open' : '')} aria-label={t('cart.title')} aria-hidden={!drawerOpen}>
+      <button className="x" onClick={closeDrawer}>{t('cart.close')}</button>
+      <h3>{t('cart.title')}</h3>
       <div className="flex-1 overflow-auto">
         {items.length === 0
-          ? <p className="text-mut">No artwork yet. Add a painting from the gallery.</p>
+          ? <p className="text-mut">{t('cart.empty')}</p>
           : items.map((i) => (
             <div key={i.key} className="it">
-              <span>{i.title}{i.variant ? ` (${i.variant})` : ''}{i.qty > 1 ? ` × ${i.qty}` : ''}<br />
-                <button className="text-sm underline text-mut" onClick={() => remove(i.key)}>Remove</button></span>
+              <span className="font-serif text-lg leading-snug">{i.title}{i.variant ? ` (${i.variant})` : ''}{i.qty > 1 ? ` × ${i.qty}` : ''}<br />
+                <button className="text-xs uppercase tracking-[0.18em] font-sans underline text-mut mt-1" onClick={() => remove(i.key)}>{t('cart.remove')}</button></span>
               <span>{inr(i.price * i.qty)}</span>
             </div>
           ))}
       </div>
-      {items.length > 0 && <p className="flex justify-between font-serif text-xl"><span>Subtotal</span><span>{inr(subtotal)}</span></p>}
-      {items.length > 0 && !checkoutEnabled && <p className="text-sm text-mut mt-3">Online ordering is paused for now. Your cart is saved.</p>}
+      {items.length > 0 && <p className="flex justify-between font-serif text-xl"><span>{t('cart.subtotal')}</span><span>{inr(subtotal)}</span></p>}
+      {items.length > 0 && !checkoutEnabled && <p className="text-sm text-mut mt-3">{t('cart.paused')}</p>}
       <Link to={items.length ? '/checkout' : '/art'} onClick={closeDrawer} className="btn fill mt-auto">
-        {items.length ? 'Continue to checkout' : 'Browse the gallery'}
+        {items.length ? t('cart.checkout') : t('cart.browse')}
       </Link>
     </aside>
+  )
+}
+
+// Site-wide donation dialog: native <dialog>, so focus is trapped and Esc closes it. Opened from the Support
+// button, the purpose section on the home page, sold artworks, and any link to "#donate".
+function DonateDialog({ dialogRef }) {
+  const { t } = useLang()
+  return (
+    <dialog ref={dialogRef} className="donate-dialog" aria-label={t('nav.support')}
+      onClick={(e) => { if (e.target === dialogRef.current) dialogRef.current.close() }}>
+      <div className="donate-dialog-bar">
+        <span className="eyebrow" style={{ margin: 0 }}>{t('cause.support')}</span>
+        <button type="button" className="btn" onClick={() => dialogRef.current.close()}>{t('donate.close')}</button>
+      </div>
+      <div className="donate-dialog-body"><DonatePanel heading="h2" /></div>
+    </dialog>
+  )
+}
+
+function BackToTop() {
+  const { t } = useLang()
+  const [show, setShow] = useState(false)
+  useEffect(() => {
+    let raf = 0
+    const onScroll = () => {
+      if (raf) return
+      raf = requestAnimationFrame(() => { raf = 0; setShow(window.scrollY > 900) })
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    onScroll()
+    return () => { window.removeEventListener('scroll', onScroll); if (raf) cancelAnimationFrame(raf) }
+  }, [])
+  return (
+    <button type="button" className={'to-top' + (show ? ' show' : '')} tabIndex={show ? 0 : -1} aria-hidden={!show}
+      onClick={() => { window.scrollTo({ top: 0, behavior: document.documentElement.classList.contains('motion') ? 'smooth' : 'auto' }); document.getElementById('main')?.focus?.() }}>
+      <span aria-hidden="true">↑</span> {t('top')}
+    </button>
   )
 }
 
 function FooterCol({ title, links: ls }) {
   return (
     <div>
-      <h2 className="text-xs uppercase mb-4 brand font-sans tracking-[0.12em]">{title}</h2>
-      <ul className="space-y-2">
+      <h2>{title}</h2>
+      <ul className="space-y-2.5">
         {ls.map(([to, label]) => <li key={to + label}><Link to={to}>{label}</Link></li>)}
       </ul>
     </div>
   )
 }
 
-function Footer() {
+function Footer({ openDonate }) {
   const tagline = useContent('global.footerTagline')
   const socials = useContent('global.social').filter((s) => s.name && safeUrl(s.url))
+  const { t } = useLang()
   return (
     <footer className="foot">
-      <div className="max-w-6xl mx-auto grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+      <div className="max-w-6xl mx-auto grid gap-10 md:grid-cols-[1.6fr_1fr_1fr_1fr]">
         <div>
-          <p className="font-serif text-3xl brand">Kalpana Jagtap</p>
-          <p className="mt-2">{tagline}</p>
-          <ul className="mt-5 flex flex-wrap gap-4">
-            {socials.map((s, i) => <li key={s.name + i}><a href={safeUrl(s.url)} target="_blank" rel="noreferrer">{s.name}</a></li>)}
-          </ul>
+          <p className="brand">Kalpana Jagtap</p>
+          <p className="mt-4 font-serif text-lg max-w-xs">{tagline}</p>
+          <button type="button" className="btn mt-6" onClick={openDonate}>{t('foot.donate')}</button>
         </div>
-        <FooterCol title="Explore" links={[['/about', 'About Kalpana'], ['/art', 'Explore gallery'], ['/poetry', 'Art & Poetry'], ['/#purpose', 'Children’s care']]} />
-        <FooterCol title="Store" links={[['/custom-art', 'Custom commissions'], ['/cart', 'Your bag'], ['/track', 'Order tracking']]} />
-        <FooterCol title="Help" links={[['/shipping-returns', 'Shipping & returns'], ['/faqs', 'FAQs'], ['/privacy', 'Privacy policy'], ['/terms', 'Terms & conditions']]} />
+        <FooterCol title={t('foot.explore')} links={[['/about', t('foot.aboutK')], ['/art', t('nav.gallery')], ['/poetry', t('foot.poetry')], ['/cause', t('nav.cause')]]} />
+        <FooterCol title={t('foot.store')} links={[['/custom-art', t('foot.custom')], ['/cart', t('foot.bag')], ['/track', t('foot.track')]]} />
+        <FooterCol title={t('foot.help')} links={[['/shipping-returns', t('foot.shipping')], ['/faqs', t('foot.faqs')], ['/privacy', t('foot.privacy')], ['/terms', t('foot.terms')]]} />
       </div>
-      <p className="text-center text-xs mt-10">This site is copyright © {new Date().getFullYear()} Kalpana Jagtap.</p>
+      <div className="foot-bottom max-w-6xl mx-auto">
+        <ul>
+          {socials.map((s, i) => <li key={s.name + i}><a href={safeUrl(s.url)} target="_blank" rel="noreferrer">{s.name}</a></li>)}
+        </ul>
+        <p>© {new Date().getFullYear()} Kalpana Jagtap. {t('foot.rights')}</p>
+      </div>
     </footer>
   )
 }
@@ -98,14 +188,22 @@ function Footer() {
 export default function Layout() {
   const { pathname, hash } = useLocation()
   const announcement = useContent('global.announcement')
+  const donateRef = useRef(null)
+  // Stable object for the UiContext; the dialog ref is only read inside the handler, never during render.
+  const ui = useMemo(() => ({ openDonate: () => { const d = donateRef.current; if (d && !d.open) d.showModal() } }), [])
 
   // Hash links (e.g. /#purpose) scroll to the section once the page has rendered; other routes start at the top.
+  // "#donate" with no such section on the page opens the donation dialog instead (the Cause page has one inline).
   useEffect(() => {
     if (!hash) { window.scrollTo(0, 0); return }
     const id = hash.slice(1)
-    const t = setTimeout(() => document.getElementById(id)?.scrollIntoView(), 50)
+    const t = setTimeout(() => {
+      const el = document.getElementById(id)
+      if (el) el.scrollIntoView()
+      else if (id === 'donate') ui.openDonate()
+    }, 50)
     return () => clearTimeout(t)
-  }, [pathname, hash])
+  }, [pathname, hash, ui])
 
   // One shared, quiet reveal: anything marked data-reveal fades up once as it scrolls into view.
   // Uses IntersectionObserver + CSS transitions (see index.css), so it costs no layout reads and no JS library.
@@ -136,13 +234,15 @@ export default function Layout() {
   }, [pathname])
 
   return (
-    <>
+    <UiProvider value={ui}>
       <SvgDefs />
       {announcement && <div className="bar" role="region" aria-label="Announcement">{announcement}</div>}
-      <Nav />
-      <main id="main" className="min-h-[70vh]"><Outlet /></main>
-      <Footer />
+      <Nav openDonate={ui.openDonate} />
+      <main id="main" className="min-h-[70vh]" tabIndex={-1}><Outlet /></main>
+      <Footer openDonate={ui.openDonate} />
       <CartDrawer />
-    </>
+      <DonateDialog dialogRef={donateRef} />
+      <BackToTop />
+    </UiProvider>
   )
 }

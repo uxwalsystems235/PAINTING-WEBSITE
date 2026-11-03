@@ -6,7 +6,7 @@ const { HttpError, bad } = require('../../lib/httpError')
 const { body, bool, oid, qstr, paging, escapeRegex } = require('../../lib/validate')
 
 const router = express.Router()
-const KINDS = ['general', 'custom', 'newsletter']
+const KINDS = ['general', 'custom', 'newsletter', 'acquisition', 'collaboration', 'donation']
 
 function buildFilter(req) {
   const filter = {}
@@ -50,7 +50,7 @@ router.get('/export', async (req, res) => {
   const kind = qstr(req.query.kind) || 'newsletter'
   if (!KINDS.includes(kind)) throw bad('Unknown kind.')
   const rows = await Enquiry.find({ kind }).sort({ createdAt: 1 })
-  const cols = kind === 'newsletter' ? ['email', 'createdAt'] : ['kind', 'name', 'email', 'style', 'size', 'budget', 'message', 'handled', 'createdAt']
+  const cols = kind === 'newsletter' ? ['email', 'createdAt'] : ['kind', 'name', 'email', 'artwork', 'style', 'size', 'budget', 'amount', 'reference', 'message', 'handled', 'createdAt']
   const lines = [cols.join(',')]
   for (const r of rows) lines.push(cols.map((c) => csvCell(r[c])).join(','))
   res.set('Content-Type', 'text/csv; charset=utf-8')

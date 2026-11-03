@@ -22,7 +22,7 @@ test('artwork create + read + public shape', async () => {
   const pub = await t.call('GET', '/api/public/artworks')
   assert.equal(pub.status, 200)
   assert.deepEqual(Object.keys(pub.json.items[0]).sort(), [
-    'ar', 'available', 'description', 'dimensions', 'dispatch', 'image', 'imageAlt', 'imageSet', 'medium', 'poemSlug', 'price', 'slug', 'title', 'type', 'variants',
+    'ar', 'available', 'description', 'dimensions', 'dispatch', 'image', 'imageAlt', 'imageSet', 'medium', 'poemSlug', 'price', 'series', 'slug', 'title', 'titleMr', 'type', 'variants', 'year',
   ])
   assert.equal(pub.headers.get('cache-control'), 'public, max-age=5, stale-while-revalidate=30')
   assert.ok(pub.headers.get('etag'))

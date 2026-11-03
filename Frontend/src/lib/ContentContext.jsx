@@ -6,6 +6,7 @@ import { artworks as staticArtworks } from '../data/artworks'
 import { poems as staticPoems } from '../data/poems'
 import { contentDefaults, contentTypes } from '../content/schema'
 import { API_BASE } from '../api'
+import { useLang } from './LangContext'
 
 const API_ORIGIN = API_BASE.replace(/\/api\/?$/, '')
 const CACHE_KEY = 'kj-public-v1'
@@ -47,6 +48,7 @@ function cleanArtwork(a) {
   return {
     slug: a.slug, title: a.title, type: a.type, medium: str(a.medium), dimensions: str(a.dimensions),
     price: a.price, available: a.available, dispatch: str(a.dispatch), description: str(a.description),
+    series: str(a.series), year: str(a.year), titleMr: str(a.titleMr),
     ar: a.ar, image, imageSet: image ? cleanImageSet(a.imageSet) : [], imageAlt: str(a.imageAlt),
     poemSlug: isStr(a.poemSlug) && a.poemSlug ? a.poemSlug : null, variants,
   }
@@ -188,7 +190,25 @@ export const useArtwork = (slug) => use().artworks.find((a) => a.slug === slug)
 export const usePoems = () => { const c = use(); return { poems: c.poems, loading: c.loading } }
 // eslint-disable-next-line react-refresh/only-export-components
 export const usePoem = (slug) => use().poems.find((p) => p.slug === slug)
+// A value counts as filled in when it is a non-empty string or a list with at least one row.
+const filled = (v) => (Array.isArray(v) ? v.length > 0 : typeof v === 'string' && v.trim() !== '')
+// Editable text for `key`. In Marathi mode the ".mr" variant wins when it is filled in (admin value, else the
+// schema default); otherwise the English text is shown, so no page is ever blank in either language.
 // eslint-disable-next-line react-refresh/only-export-components
-export const useContent = (key) => { const c = use(); return c.content[key] ?? contentDefaults[key] }
+export const useContent = (key) => {
+  const c = use()
+  const { lang } = useLang()
+  if (lang === 'mr') {
+    const mr = c.content[key + '.mr'] ?? contentDefaults[key + '.mr']
+    if (filled(mr)) return mr
+  }
+  return c.content[key] ?? contentDefaults[key]
+}
+// The title to display for a painting in the current language (Marathi title when set).
+// eslint-disable-next-line react-refresh/only-export-components
+export const useArtTitle = () => {
+  const { lang } = useLang()
+  return (a) => (lang === 'mr' && a.titleMr ? a.titleMr : a.title)
+}
 // eslint-disable-next-line react-refresh/only-export-components
 export const useSettings = () => use().settings

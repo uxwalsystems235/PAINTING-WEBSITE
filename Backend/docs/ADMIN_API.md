@@ -98,10 +98,10 @@ status ∈ pending-payment | paid | dispatched | delivered | cancelled
 ```
 Changing to `cancelled` re-lists every `original` in the order (`available: true`) exactly once (idempotent). Moving **out of** `cancelled` re-claims originals atomically; if any is no longer available → 409 `{ error }` and nothing changes. Every status change appends to `statusHistory` and the audit log.
 
-### Enquiries (contact, custom-art, newsletter)
-`GET /enquiries?kind=general|custom|newsletter&handled=true|false&q=&page=&pageSize=` · `PATCH /enquiries/:id` `{ handled: boolean }` · `DELETE /enquiries/:id` · `GET /enquiries/export?kind=` → `text/csv` download with `Content-Disposition: attachment` (`kind` defaults to **newsletter**: columns `email,createdAt`; for `general`/`custom`: `kind,name,email,style,size,budget,message,handled,createdAt`; unknown kind 400); cells starting with `= + - @` are prefixed with `'` (CSV injection). Newsletter sign-ups are de-duplicated by lower-cased email (public `POST /api/enquiries` with `kind:'newsletter'` upserts and still returns 201).
+### Enquiries (contact, custom-art, newsletter, acquisition, collaboration, donation)
+`GET /enquiries?kind=general|custom|newsletter|acquisition|collaboration|donation&handled=true|false&q=&page=&pageSize=` · `PATCH /enquiries/:id` `{ handled: boolean }` · `DELETE /enquiries/:id` · `GET /enquiries/export?kind=` → `text/csv` download with `Content-Disposition: attachment` (`kind` defaults to **newsletter**: columns `email,createdAt`; for every other kind: `kind,name,email,artwork,style,size,budget,amount,reference,message,handled,createdAt`; unknown kind 400); cells starting with `= + - @` are prefixed with `'` (CSV injection). Newsletter sign-ups are de-duplicated by lower-cased email (public `POST /api/enquiries` with `kind:'newsletter'` upserts and still returns 201).
 ```
-AdminEnquiry = { id, kind, name, email, style, size, budget, message, handled, handledAt, createdAt }
+AdminEnquiry = { id, kind, name, email, style, size, budget, artwork /* acquisition */, amount, reference /* donation */, message, handled, handledAt, createdAt }
 ```
 
 ### Site content (editable text)

@@ -21,7 +21,7 @@ export default function Checkout() {
   const [serverError, setServerError] = useState('')
 
   if (items.length === 0) {
-    return <div className="max-w-3xl mx-auto px-5 py-24 text-center"><h1 className="text-4xl">Nothing to check out</h1><Link to="/art" className="btn btn-dark mt-8">Explore Art</Link></div>
+    return <div className="max-w-3xl mx-auto px-5 py-24 text-center"><h1 className="text-4xl">Nothing to check out</h1><Link to="/art" className="btn fill mt-8">Explore Art</Link></div>
   }
 
   const shipping = shippingFor(subtotal, rules)
@@ -65,7 +65,7 @@ export default function Checkout() {
 
   const field = (name, label, props = {}) => (
     <div className={props.wide ? 'sm:col-span-2' : ''}>
-      <label htmlFor={name} className="text-sm">{label}</label>
+      <label htmlFor={name}>{label}</label>
       <input id={name} name={name} value={form[name]} onChange={change} className="input mt-1" aria-invalid={!!errors[name]} {...props.input} />
       {errors[name] && <p className="text-sm text-danger mt-1">{errors[name]}</p>}
     </div>
@@ -74,8 +74,9 @@ export default function Checkout() {
   return (
     <div className="max-w-5xl mx-auto px-5 py-16 grid md:grid-cols-[1fr_20rem] gap-12">
       <form onSubmit={submit} noValidate>
-        <h1 className="text-5xl">Checkout</h1>
-        <p className="text-sm text-mut mt-1">{intro}</p>
+        <span className="eyebrow">Secure your artwork</span>
+        <h1 className="text-5xl md:text-6xl">Checkout</h1>
+        <p className="text-mut mt-3 font-serif text-lg">{intro}</p>
         <div className="mt-8 grid sm:grid-cols-2 gap-5">
           {field('name', 'Full name', { wide: true, input: { autoComplete: 'name' } })}
           {field('email', 'Email', { input: { type: 'email', autoComplete: 'email' } })}
@@ -86,18 +87,18 @@ export default function Checkout() {
           {field('pin', 'PIN code', { input: { inputMode: 'numeric', maxLength: 6, autoComplete: 'postal-code' } })}
         </div>
 
-        <div className="mt-8 border border-sand p-4 text-sm">
-          <p className="font-medium">Payment</p>
+        <div className="mt-8 border border-sand p-5 text-sm">
+          <p className="text-xs uppercase tracking-[0.18em] font-medium">Payment</p>
           <p className="text-mut mt-1">{payment}</p>
         </div>
 
         {!checkoutEnabled && <p role="status" className="mt-5 border border-sand p-4 text-sm">Online ordering is paused for the moment, so orders cannot be placed right now. Your bag is saved — please check back soon, or <Link to="/contact" className="underline">contact us</Link>.</p>}
         {serverError && <p role="alert" className="mt-5 text-danger">{serverError}</p>}
-        <button className="btn btn-dark mt-6" disabled={submitting || !checkoutEnabled}>{submitting ? 'Placing order…' : 'Place order'}</button>
+        <button className="btn fill mt-6" disabled={submitting || !checkoutEnabled}>{submitting ? 'Placing order…' : 'Place order'}</button>
       </form>
 
-      <aside className="bg-panel p-5 h-fit">
-        <h2 className="text-2xl mb-3">Order summary</h2>
+      <aside className="bg-panel p-6 h-fit md:sticky md:top-24">
+        <h2 className="text-2xl mb-4">Order summary</h2>
         <ul className="space-y-2 text-sm">
           {items.map((i) => (
             <li key={i.key} className="flex justify-between gap-3">
@@ -108,7 +109,7 @@ export default function Checkout() {
         <dl className="mt-4 pt-3 border-t border-sand space-y-1 text-sm">
           <div className="flex justify-between"><dt>Subtotal</dt><dd>{inr(subtotal)}</dd></div>
           <div className="flex justify-between"><dt>Shipping</dt><dd>{shipping ? inr(shipping) : 'Free'}</dd></div>
-          <div className="flex justify-between font-serif text-xl pt-1"><dt>Total</dt><dd>{inr(subtotal + shipping)}</dd></div>
+          <div className="flex justify-between font-serif text-2xl pt-2 border-t border-charcoal mt-2"><dt>Total</dt><dd>{inr(subtotal + shipping)}</dd></div>
         </dl>
       </aside>
     </div>

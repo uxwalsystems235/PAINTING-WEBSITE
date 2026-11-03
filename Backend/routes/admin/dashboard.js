@@ -12,7 +12,7 @@ router.get('/', async (req, res) => {
       Order.aggregate([{ $group: { _id: '$status', n: { $sum: 1 }, value: { $sum: '$total' } } }]),
       Order.aggregate([{ $match: { status: { $in: ['paid', 'dispatched', 'delivered'] } } }, { $group: { _id: null, v: { $sum: '$total' } } }]),
       Artwork.find().select('price available').lean(),
-      Enquiry.countDocuments({ kind: 'general', handled: { $ne: true } }),
+      Enquiry.countDocuments({ kind: { $nin: ['custom', 'newsletter'] }, handled: { $ne: true } }),
       Enquiry.countDocuments({ kind: 'custom', handled: { $ne: true } }),
       Enquiry.countDocuments({ kind: 'newsletter' }),
       Order.find().sort({ createdAt: -1, _id: -1 }).limit(5),

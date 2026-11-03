@@ -8,14 +8,14 @@ import { deepEqual, fp, isInt, moveItem, SLUG_RE, slugify } from '../util.js'
 import MediaPicker from './MediaPicker.jsx'
 
 const BLANK = {
-  slug: '', title: '', type: 'original', medium: '', dimensions: '', price: '', onEnquiry: false, available: true,
-  dispatch: '', description: '', ar: '0.8', image: null, imageAlt: '', poemSlug: '', variants: [], published: true,
+  slug: '', title: '', titleMr: '', type: 'original', medium: '', dimensions: '', price: '', onEnquiry: false, available: true,
+  dispatch: '', description: '', series: '', year: '', ar: '0.8', image: null, imageAlt: '', poemSlug: '', variants: [], published: true,
 }
 
 const fromArtwork = (a) => ({
-  slug: a.slug, title: a.title, type: a.type, medium: a.medium || '', dimensions: a.dimensions || '',
+  slug: a.slug, title: a.title, titleMr: a.titleMr || '', type: a.type, medium: a.medium || '', dimensions: a.dimensions || '',
   price: a.price == null ? '' : String(a.price), onEnquiry: a.price == null, available: !!a.available,
-  dispatch: a.dispatch || '', description: a.description || '', ar: String(a.ar ?? 0.8), image: a.image || null,
+  dispatch: a.dispatch || '', description: a.description || '', series: a.series || '', year: a.year || '', ar: String(a.ar ?? 0.8), image: a.image || null,
   imageAlt: a.imageAlt || '', poemSlug: a.poemSlug || '',
   variants: (a.variants || []).map((v) => ({ label: v.label, price: String(v.price) })), published: !!a.published,
 })
@@ -24,6 +24,9 @@ function validate(f, creating) {
   const e = {}
   const t = f.title.trim()
   if (!t) e.title = 'Enter a title.'; else if (t.length > 120) e.title = 'Keep the title to 120 characters.'
+  if (f.titleMr.length > 120) e.titleMr = 'Keep the Marathi title to 120 characters.'
+  if (f.series.length > 80) e.series = 'Keep the series name to 80 characters.'
+  if (f.year.length > 12) e.year = 'Keep the year to 12 characters.'
   if (creating) {
     if (!f.slug) e.slug = 'Enter a slug.'
     else if (f.slug.length > 60) e.slug = 'Keep the slug to 60 characters.'
@@ -79,9 +82,9 @@ function ArtworkForm({ initial, poems, id }) {
       return
     }
     const body = {
-      slug: f.slug, title: f.title.trim(), type: f.type, medium: f.medium.trim(), dimensions: f.dimensions.trim(),
+      slug: f.slug, title: f.title.trim(), titleMr: f.titleMr.trim(), type: f.type, medium: f.medium.trim(), dimensions: f.dimensions.trim(),
       price: f.onEnquiry ? null : Number(f.price), available: f.available, dispatch: f.dispatch.trim(),
-      description: f.description, ar: Number(f.ar), image: f.image || null, imageAlt: f.imageAlt.trim(),
+      description: f.description, series: f.series.trim(), year: f.year.trim(), ar: Number(f.ar), image: f.image || null, imageAlt: f.imageAlt.trim(),
       poemSlug: f.poemSlug || null, published: f.published,
       variants: f.type === 'print' ? f.variants.map((v) => ({ label: v.label.trim(), price: Number(v.price) })) : [],
     }
@@ -107,6 +110,9 @@ function ArtworkForm({ initial, poems, id }) {
           <input {...fp('title', errors.title)} className="input" required maxLength={200} value={f.title}
             onChange={(e) => { set('title', e.target.value); if (creating && !slugTouched) set('slug', slugify(e.target.value)) }} />
         </Field>
+        <Field label="Title in Marathi (optional)" id="titleMr" error={errors.titleMr} help="Shown instead of the English title when a visitor reads the site in Marathi." counter={<Counter value={f.titleMr} max={120} />}>
+          <input {...fp('titleMr', errors.titleMr, true)} className="input" lang="mr" value={f.titleMr} onChange={(e) => set('titleMr', e.target.value)} />
+        </Field>
         <Field label="Slug (web address)" id="slug" error={errors.slug} help={creating ? 'Generated from the title. It becomes part of the page address and cannot be changed after saving.' : 'Locked: the slug cannot be changed after creation.'}>
           <input {...fp('slug', errors.slug, true)} className="input" value={f.slug} readOnly={!creating} maxLength={60}
             onChange={(e) => { setSlugTouched(true); set('slug', e.target.value.toLowerCase()) }} />
@@ -125,6 +131,12 @@ function ArtworkForm({ initial, poems, id }) {
           </Field>
           <Field label="Dimensions" id="dimensions" error={errors.dimensions} help="For example: 60 × 90 cm">
             <input {...fp('dimensions', errors.dimensions, true)} className="input" value={f.dimensions} onChange={(e) => set('dimensions', e.target.value)} />
+          </Field>
+          <Field label="Series (optional)" id="series" error={errors.series} help="Groups works in the gallery filter, e.g. Nature & Wings. Use exactly the same spelling for every work in a series.">
+            <input {...fp('series', errors.series, true)} className="input" value={f.series} onChange={(e) => set('series', e.target.value)} />
+          </Field>
+          <Field label="Year (optional)" id="year" error={errors.year} help="Shown on the artwork page.">
+            <input {...fp('year', errors.year, true)} className="input max-w-[10rem]" inputMode="numeric" value={f.year} onChange={(e) => set('year', e.target.value)} />
           </Field>
         </div>
         <Field label="Description" id="description" error={errors.description} counter={<Counter value={f.description} max={2000} />}>

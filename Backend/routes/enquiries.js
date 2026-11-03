@@ -8,7 +8,7 @@ const router = express.Router()
 const limiter = new FailureLimiter({ name: 'enquiry-create', windowMs: envInt('RATE_LIMIT_WINDOW_MINUTES', 60) * 60 * 1000 })
 router.limiter = limiter
 const str = (v, max = 2000) => (typeof v === 'string' ? v.trim().slice(0, max) : '')
-const KINDS = ['general', 'custom', 'newsletter']
+const KINDS = ['general', 'custom', 'newsletter', 'acquisition', 'collaboration', 'donation']
 
 router.post('/', perIp(limiter, () => envInt('ENQUIRY_RATE_LIMIT', 10)), async (req, res, next) => {
   try {
@@ -18,11 +18,14 @@ router.post('/', perIp(limiter, () => envInt('ENQUIRY_RATE_LIMIT', 10)), async (
       kind,
       name: str(b.name, 100), email: str(b.email, 200),
       style: str(b.style, 200), size: str(b.size, 100), budget: str(b.budget, 100),
+      artwork: str(b.artwork, 200), amount: str(b.amount, 40), reference: str(b.reference, 100),
       message: str(b.message),
     }
     if (!/^\S+@\S+\.\S+$/.test(data.email)) {
       return res.status(400).json({ error: 'Please provide a valid email.' })
     }
+    // A receipt request may arrive without a note; the record still needs something to read in the admin panel.
+    if (kind === 'donation' && !data.message) data.message = 'Receipt request'
     // Newsletter sign-ups need only an email; other enquiries also need a name and message.
     if (kind !== 'newsletter' && (!data.name || !data.message)) {
       return res.status(400).json({ error: 'Please provide your name, a valid email and a message.' })

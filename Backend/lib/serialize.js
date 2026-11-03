@@ -6,6 +6,7 @@ const publicArtwork = (a, variantMap) => ({
   slug: a.slug, title: a.title, type: a.type, medium: a.medium || '', dimensions: a.dimensions || '',
   price: a.price ?? null, available: a.available !== false, dispatch: a.dispatch || '',
   description: a.description || '', ar: a.ar ?? 1, image: a.image || null, imageAlt: a.imageAlt || '',
+  series: a.series || '', year: a.year || '', titleMr: a.titleMr || '',
   poemSlug: a.poemSlug || null, imageSet: imageSetFor(a, variantMap),
   variants: (a.variants || []).map((v) => ({ label: v.label, price: v.price })),
 })
@@ -37,7 +38,8 @@ const adminOrder = (o) => ({
 
 const adminEnquiry = (e) => ({
   id: String(e._id), kind: e.kind, name: e.name || '', email: e.email, style: e.style || '', size: e.size || '',
-  budget: e.budget || '', message: e.message || '', handled: !!e.handled, handledAt: e.handledAt || null, createdAt: e.createdAt,
+  budget: e.budget || '', artwork: e.artwork || '', amount: e.amount || '', reference: e.reference || '',
+  message: e.message || '', handled: !!e.handled, handledAt: e.handledAt || null, createdAt: e.createdAt,
 })
 
 const adminMedia = (m) => ({

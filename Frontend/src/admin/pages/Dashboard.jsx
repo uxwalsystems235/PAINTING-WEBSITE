@@ -37,7 +37,7 @@ export default function Dashboard() {
         <Stat label="Available to buy" value={formatNum(a.available)} to="/artworks" sub={`priced and in stock, of ${formatNum(a.total)} artworks`} />
         <Stat label="Sold" value={formatNum(a.sold)} to="/artworks" />
         <Stat label="Price on enquiry" value={formatNum(a.onEnquiry)} to="/artworks" sub="artworks with no listed price; buyers must contact you" />
-        <Stat label="Unhandled enquiries" value={formatNum(e.unhandledGeneral)} to="/enquiries?kind=general" />
+        <Stat label="Unhandled messages" value={formatNum(e.unhandledGeneral)} to="/enquiries?kind=general" sub="general, acquisition, collaboration and donation enquiries" />
         <Stat label="Unhandled custom requests" value={formatNum(e.unhandledCustom)} to="/enquiries?kind=custom" />
         <Stat label="Newsletter subscribers" value={formatNum(e.newsletterSubscribers)} to="/enquiries?kind=newsletter" />
       </div>

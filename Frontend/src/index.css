@@ -3,73 +3,93 @@
 
 /* ───────────────────────────── Design tokens ─────────────────────────────
    Edit colours, type and motion speed here; every page reads these variables.
-   Light values come from the brief's palette (ivory / charcoal / terracotta / sand).
-   Contrast (WCAG): text 13.9:1, muted 5.3:1, accent 5.7:1 on the page background. */
+   Palette: warm paper, ink, terracotta accent on light, amber-gold on the dark bands.
+   Contrast (WCAG, light): text 16:1, muted 7:1, accent 5.3:1 on the page; gold 8.3:1 on ink. */
 :root {
-  --bg: #F5F0E8;          /* page */
-  --surface: #EBE3D6;     /* mats, panels, cards */
-  --line: #D8C9B6;        /* hairlines, borders (sand) */
-  --fg: #25221F;          /* text (charcoal) */
-  --mut: #6B6258;         /* secondary text */
-  --accent: #7A5640;      /* links, buttons, focus — deepened terracotta (the original #9A755B was 3.65:1, below AA) */
-  --on-accent: #F5F0E8;   /* text on accent buttons */
-  --band: #25221F;        /* dark bands: pillars, newsletter, footer */
-  --on-band: #F5F0E8;
-  --on-band-mut: #D8C9B6;
+  --bg: #FAF7F1;          /* page (warm paper, lighter) */
+  --surface: #F0EBE1;     /* panels, cards, mats */
+  --line: #DDD4C5;        /* hairlines, borders */
+  --fg: #1B1917;          /* text (ink) */
+  --mut: #5A5248;         /* secondary text */
+  --accent: #A94A22;      /* links, primary buttons, focus — terracotta (5.3:1 on the page) */
+  --on-accent: #FAF7F1;
+  --gold: #DFA052;        /* amber-gold on dark bands (logo, eyebrows, round button); 8.3:1 on ink */
+  --terracotta: #A94A22;  /* the big "100%" figure */
+  --radius: 6px;          /* soft corner on images, cards and inputs */
+  --shadow: 0 24px 48px -28px rgb(27 25 23 / 0.35);
+  --band: #1B1917;        /* dark bands: nav, hero, info, newsletter, footer */
+  --on-band: #F4EFE6;
+  --on-band-mut: #B9AF9F;
+  --band-line: rgb(244 239 230 / 0.12);
   --danger: #9B1C1C;      /* form errors */
 
+  --wash-opacity: 0.55;   /* watercolour wash behind the purpose section */
+  --ink-opacity: 0.22;    /* ink swirl behind the poetry quote */
   --motion-speed: 1;      /* 1 = designed pace · 2 = twice as slow · 0.5 = twice as fast · 0 = no motion */
-  --section-space: clamp(4.5rem, 10vw, 9rem);
+  --section-space: clamp(4.5rem, 10vw, 8.5rem);
+  --nav-h: 4.5rem;        /* sticky nav height; the home hero slides underneath it */
   --measure-poem: 34rem;  /* width of the poem reading column */
-  --grain-opacity: 0.05;  /* paper texture strength; 0 turns it off */
+  --grain-opacity: 0.045; /* paper texture strength; 0 turns it off */
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #1C1917; --surface: #2A2521; --line: #3B342E; --fg: #F5F0E8; --mut: #CFC3B2;
-    --accent: #C79A7C; --on-accent: #1C1917; --band: #121010; --on-band: #F5F0E8; --on-band-mut: #D8C9B6; --danger: #F2A59C;
-    --grain-opacity: 0.04;
+    --bg: #171513; --surface: #221F1B; --line: #35302A; --fg: #F2ECE2; --mut: #BDB2A0;
+    --accent: #DFA052; --on-accent: #171513; --gold: #DFA052; --terracotta: #D98B6A;
+    --band: #0F0E0C; --on-band: #F2ECE2; --on-band-mut: #BDB2A0; --band-line: rgb(242 236 226 / 0.12); --danger: #F2A59C;
+    --wash-opacity: 0.14; --ink-opacity: 0.14; --grain-opacity: 0.04; --shadow: 0 24px 48px -28px rgb(0 0 0 / 0.7);
   }
 }
 :root[data-theme="dark"] {
-  --bg: #1C1917; --surface: #2A2521; --line: #3B342E; --fg: #F5F0E8; --mut: #CFC3B2;
-  --accent: #C79A7C; --on-accent: #1C1917; --band: #121010; --on-band: #F5F0E8; --on-band-mut: #D8C9B6; --danger: #F2A59C;
-  --grain-opacity: 0.04;
+  --bg: #171513; --surface: #221F1B; --line: #35302A; --fg: #F2ECE2; --mut: #BDB2A0;
+  --accent: #DFA052; --on-accent: #171513; --gold: #DFA052; --terracotta: #D98B6A;
+  --band: #0F0E0C; --on-band: #F2ECE2; --on-band-mut: #BDB2A0; --band-line: rgb(242 236 226 / 0.12); --danger: #F2A59C;
+  --wash-opacity: 0.14; --ink-opacity: 0.14; --grain-opacity: 0.04; --shadow: 0 24px 48px -28px rgb(0 0 0 / 0.7);
 }
 
 @theme inline {
   --color-ivory: var(--bg);
   --color-charcoal: var(--fg);
   --color-terracotta: var(--accent);
+  --color-gold: var(--gold);
   --color-sand: var(--line);
   --color-panel: var(--surface);
   --color-mut: var(--mut);
   --color-band: var(--band);
   --color-danger: var(--danger);
-  --font-serif: "Cormorant Garamond", "Cormorant Fallback", "Noto Serif Devanagari", Georgia, serif;
-  --font-sans: "Inter", "Inter Fallback", system-ui, sans-serif;
+  --font-serif: "Playfair Display", "Playfair Fallback", "Noto Serif Devanagari", Georgia, serif;
+  --font-sans: "Jost", "Jost Fallback", "Noto Serif Devanagari", system-ui, sans-serif;
 }
 
-/* Fallback faces sized to match the web fonts (measured: Inter is 107.3% of Arial, Cormorant 88.8% of Georgia),
-   so text does not jump when the real fonts arrive. */
-@font-face { font-family: "Inter Fallback"; src: local("Arial"); size-adjust: 107.3%; }
-@font-face { font-family: "Cormorant Fallback"; src: local("Georgia"); size-adjust: 88.8%; }
+/* Fallback faces sized to approximate the web fonts, so text does not jump much when the real fonts arrive. */
+@font-face { font-family: "Jost Fallback"; src: local("Arial"); size-adjust: 97%; }
+@font-face { font-family: "Playfair Fallback"; src: local("Georgia"); size-adjust: 103%; }
 
 /* ───────────────────────────── Base ───────────────────────────── */
-html { scroll-padding-top: 5rem; }
+html { scroll-padding-top: 5.5rem; }
 body {
   background: var(--bg);
   color: var(--fg);
   font: 400 1rem/1.7 var(--font-sans);
   overflow-x: hidden;
 }
-/* Cormorant is delicate: keep it at weight 500+ and 28px+ (headings and titles only). */
-h1, h2, h3, h4 { font-family: var(--font-serif); font-weight: 500; line-height: 1.12; letter-spacing: -0.005em; }
-h4 { font-family: var(--font-sans); font-weight: 500; line-height: 1.4; letter-spacing: 0.12em; }
-:lang(mr) { font-family: "Noto Serif Devanagari", var(--font-serif); letter-spacing: 0; }
-/* Devanagari glyphs sit smaller than Latin at the same size; nudge inline Marathi (titles, links) up to match. */
-span:lang(mr), a:lang(mr) { font-size: 1.1em; }
+h1, h2, h3 { font-family: var(--font-serif); font-weight: 500; line-height: 1.1; letter-spacing: -0.01em; }
+h4 { font-family: var(--font-sans); font-weight: 500; font-size: 0.75rem; line-height: 1.4; letter-spacing: 0.16em; text-transform: uppercase; }
+/* Devanagari glyphs sit smaller than Latin at the same size; nudge inline Marathi (poem titles, links) up to match.
+   Attribute selectors, not :lang(), so this applies to marked inline text only and never cascades from <html lang>. */
+span[lang="mr"], a[lang="mr"], h1[lang="mr"], h2[lang="mr"], p[lang="mr"] { letter-spacing: 0; }
+span[lang="mr"], a[lang="mr"] { font-size: 1.1em; }
+
+/* Marathi mode (<html lang="mr">): tracked small capitals do not suit Devanagari, so labels drop the tracking and
+   the forced capitals and gain a little size; English words inside them (numbers, "UPI") keep rendering fine. */
+html[lang="mr"] :is(.eyebrow, .btn, .links a, .arrow-link, .back-link, label, .icons, .pts span, .badge, .mobile-menu a, .foot h2, .foot-bottom, .bar, .view-toggle button, .chip, .filter-label, h4, .lab .row .btn, .sec-head .arrow-link) {
+  letter-spacing: 0.02em; text-transform: none; font-size: 0.8125rem;
+}
+html[lang="mr"] :is(.bar, .badge, .lab .row .btn) { font-size: 0.75rem; }
+html[lang="mr"] :is(.eyebrow, .btn, .links a) { line-height: 1.5; }
+html[lang="mr"] :is(h1, h2, h3) { letter-spacing: 0; line-height: 1.25; }
+html[lang="mr"] .hero h1 { line-height: 1.15; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.band :focus-visible, .foot :focus-visible { outline-color: var(--on-band); }
+.band :focus-visible, .foot :focus-visible, .nav :focus-visible, .hero-stage :focus-visible { outline-color: var(--gold); }
 a { text-underline-offset: 0.2em; }
 
 /* Paper grain: one static, non-animated overlay. Set --grain-opacity: 0 to remove. */
@@ -78,24 +98,88 @@ body::before {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
+/* ───────────────────────────── Typography helpers ───────────────────────────── */
+/* Small tracked capitals: section eyebrows, nav, labels. */
+.eyebrow { display: block; font: 500 0.6875rem/1.4 var(--font-sans); letter-spacing: 0.24em; text-transform: uppercase; color: var(--accent); margin-bottom: 1.1rem; }
+.band .eyebrow, .hero-stage .eyebrow, .news .eyebrow, .info .eyebrow { color: var(--gold); }
+.lead { max-width: 40rem; color: var(--mut); font-size: 1.125rem; line-height: 1.75; }
+
+/* Tracked capitals with a long arrow ("View all works ⟶"). The arrow is an inline SVG from components/ui.jsx. */
+.arrow-link { display: inline-flex; align-items: center; gap: 0.9rem; font: 500 0.6875rem/1 var(--font-sans); letter-spacing: 0.22em; text-transform: uppercase; text-decoration: none; color: inherit; }
+.arrow-link .arrow { flex: none; transition: transform calc(0.45s * var(--motion-speed)) cubic-bezier(0.22, 0.61, 0.36, 1); }
+.arrow-link:hover .arrow, .arrow-link:focus-visible .arrow { transform: translateX(6px); }
+.back-link { display: inline-block; font: 500 0.6875rem/1 var(--font-sans); letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); text-decoration: none; padding: 0.5rem 0; }
+.back-link:hover { text-decoration: underline; }
+
+/* Page and section scaffolding shared by every public page. */
+.section { padding: var(--section-space) 6vw; }
+/* margin-inline only, so Tailwind spacing utilities (mt-*) on the same element still apply (unlayered CSS beats them). */
+.container { max-width: 76rem; margin-inline: auto; }
+.page-head { max-width: 76rem; margin: 0 auto; padding: clamp(3rem, 7vw, 5.5rem) 0 0; }
+.page-head h1 { font-size: clamp(2.75rem, 6vw, 4.75rem); max-width: 18ch; }
+.page-head .lead { margin-top: 1.25rem; }
+.sec-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 2rem; flex-wrap: wrap; padding-bottom: 1.25rem; border-bottom: 1px solid var(--fg); }
+.sec-head h2 { font-size: clamp(2rem, 3.8vw, 3rem); margin: 0; }
+.band .sec-head { border-color: var(--on-band-mut); }
+
 /* ───────────────────────────── Components ───────────────────────────── */
+/* Pill buttons in tracked capitals. `.fill` is the primary; on dark bands the fill flips to ivory. */
 .btn {
-  display: inline-block; padding: 0.85rem 1.6rem; font: 500 0.875rem/1.2 var(--font-sans); letter-spacing: 0.04em;
-  border: 1px solid currentColor; border-radius: 2px; background: transparent; color: inherit;
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.6rem; min-height: 2.9rem;
+  padding: 0.8rem 1.75rem; font: 500 0.6875rem/1.2 var(--font-sans); letter-spacing: 0.2em; text-transform: uppercase;
+  border: 1px solid currentColor; border-radius: 999px; background: transparent; color: inherit;
   cursor: pointer; text-align: center; text-decoration: none;
-  transition: background-color calc(0.4s * var(--motion-speed)), color calc(0.4s * var(--motion-speed));
+  transition: background-color calc(0.4s * var(--motion-speed)), color calc(0.4s * var(--motion-speed)), border-color calc(0.4s * var(--motion-speed));
 }
 .btn:hover { background: var(--fg); color: var(--bg); border-color: var(--fg); }
 .btn.fill, .btn-dark { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 .btn.fill:hover, .btn-dark:hover { background: var(--fg); border-color: var(--fg); color: var(--bg); }
-.band .btn:hover, .news .btn:hover { background: var(--on-band); border-color: var(--on-band); color: var(--band); }
+.band .btn, .hero-stage .btn, .news .btn, .info .btn { color: var(--on-band); }
+.band .btn:hover, .hero-stage .btn:hover, .news .btn:hover, .info .btn:hover { background: var(--gold); border-color: var(--gold); color: var(--band); }
+.band .btn.fill, .hero-stage .btn.fill, .news .btn.fill, .info .btn.fill { background: var(--on-band); border-color: var(--on-band); color: var(--band); }
 .btn:disabled, .btn[disabled] { opacity: 0.5; cursor: default; }
 .btn:disabled:hover { background: transparent; color: inherit; border-color: currentColor; }
+.btn.fill:disabled:hover, .btn-dark:disabled:hover { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
 .input {
-  width: 100%; background: transparent; border: 1px solid var(--mut); border-radius: 2px;
-  padding: 0.75rem 0.9rem; font-size: 1rem; color: inherit;
+  width: 100%; background: color-mix(in srgb, var(--surface) 55%, transparent); border: 1px solid var(--line); border-bottom-color: var(--mut); border-radius: var(--radius);
+  padding: 0.8rem 0.95rem; font-size: 1rem; color: inherit;
 }
 .input:focus { border-color: var(--accent); outline: 2px solid var(--accent); outline-offset: 1px; }
+label { font: 500 0.6875rem/1.4 var(--font-sans); letter-spacing: 0.16em; text-transform: uppercase; color: var(--mut); }
+
+/* Gallery wall: a masonry of works at their true proportions (home page and the Gallery page). */
+.masonry { columns: 1; column-gap: 2rem; }
+@media (min-width: 560px) { .masonry { columns: 2; } }
+@media (min-width: 900px) { .masonry { columns: 3; } }
+@media (min-width: 1200px) { .masonry { columns: 4; } }
+.work { break-inside: avoid; display: block; margin-bottom: 2.75rem; }
+.work .cv { position: relative; display: block; overflow: hidden; background: var(--surface); border-radius: var(--radius); transition: transform calc(0.6s * var(--motion-speed)) cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow calc(0.6s * var(--motion-speed)); }
+.work:hover .cv { transform: translateY(-4px); box-shadow: var(--shadow); }
+.work .cv-art { display: block; width: 100%; transition: transform calc(1.2s * var(--motion-speed)) cubic-bezier(0.22, 0.61, 0.36, 1); }
+.work:hover .cv-art, .work .cv:focus-visible .cv-art { transform: scale(1.03); }
+.cv-art > svg, .cv-art > img { width: 100%; height: 100%; display: block; object-fit: cover; }
+.badge { position: absolute; top: 0.75rem; left: 0.75rem; font: 500 0.625rem/1 var(--font-sans); letter-spacing: 0.18em; text-transform: uppercase; padding: 0.45rem 0.75rem; border-radius: 999px; background: var(--bg); color: var(--fg); }
+.lab { display: flex; flex-direction: column; gap: 0.2rem; margin-top: 1rem; font-size: 0.875rem; }
+.lab b { font: 500 1.3rem/1.25 var(--font-serif); }
+.lab span { color: var(--mut); font-size: 0.8125rem; }
+.lab .series { font-size: 0.6875rem; letter-spacing: 0.14em; text-transform: uppercase; }
+.lab em { font-style: normal; font-weight: 500; margin-top: 0.2rem; }
+.lab .row { display: flex; gap: 1.2rem; flex-wrap: wrap; margin-top: 0.6rem; }
+.lab .row .btn { min-height: 0; padding: 0.2rem 0; border: 0; border-bottom: 1px solid currentColor; border-radius: 0; background: none; color: var(--fg); font-size: 0.625rem; letter-spacing: 0.18em; }
+.lab .row .btn.fill { color: var(--accent); }
+.lab .row .btn:hover { background: none; color: var(--accent); border-color: var(--accent); }
+.lab .row .btn:disabled, .lab .row .btn:disabled:hover { color: var(--mut); border-color: var(--mut); }
+
+/* Gallery filters: availability toggle plus series chips (Art.jsx). */
+.filters { display: flex; flex-wrap: wrap; gap: 1.25rem 3rem; align-items: flex-start; padding-top: 1.5rem; border-top: 1px solid var(--fg); }
+.filter-group { display: flex; flex-direction: column; gap: 0.6rem; }
+.filter-label { font: 500 0.6875rem/1 var(--font-sans); letter-spacing: 0.22em; text-transform: uppercase; color: var(--mut); }
+.filters .view-toggle { margin-bottom: 0; }
+.view-toggle small { font-size: 0.625rem; opacity: 0.7; margin-left: 0.3rem; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.chip { border: 1px solid var(--line); background: transparent; color: var(--mut); border-radius: 999px; padding: 0.5rem 1rem; font: 500 0.625rem/1 var(--font-sans); letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer; min-height: 2.25rem; transition: border-color calc(0.3s * var(--motion-speed)), color calc(0.3s * var(--motion-speed)); }
+.chip:hover { border-color: var(--fg); color: var(--fg); }
+.chip[aria-pressed="true"] { background: var(--fg); border-color: var(--fg); color: var(--bg); }
 
 /* Poems: a narrow, quiet reading column. Devanagari needs more leading for its matras. */
 .poem-text { font-family: var(--font-serif); font-size: clamp(1.35rem, 2.4vw, 1.65rem); line-height: 1.85; }
@@ -110,10 +194,6 @@ body::before {
               transform calc(0.9s * var(--motion-speed)) cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 .motion [data-reveal].is-in { opacity: 1; transform: none; }
-
-/* Hero painting wipes in once, left to right, like wet ink. */
-.motion .hero .mat { animation: ink calc(1.8s * var(--motion-speed)) cubic-bezier(0.65, 0, 0.35, 1) both; }
-@keyframes ink { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 
 /* Poem lines appear one after another; the first starts at once so the poem is never blank. */
 .motion .poem-line { animation: line-in calc(1.2s * var(--motion-speed)) cubic-bezier(0.22, 0.61, 0.36, 1) both;

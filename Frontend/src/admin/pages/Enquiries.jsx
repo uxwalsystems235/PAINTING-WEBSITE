@@ -6,7 +6,7 @@ import { useFetch, usePageTitle } from '../hooks.js'
 import { Badge, Check, Empty, ErrorBox, Loading, PageHeader, Pagination, TableWrap } from '../ui.jsx'
 import { formatDate } from '../util.js'
 
-const TABS = [['general', 'General'], ['custom', 'Custom art'], ['newsletter', 'Newsletter']]
+const TABS = [['general', 'General'], ['acquisition', 'Acquisitions'], ['collaboration', 'Collaboration'], ['donation', 'Donations'], ['custom', 'Custom art'], ['newsletter', 'Newsletter']]
 const PAGE_SIZE = 20
 
 export default function Enquiries() {
@@ -53,10 +53,10 @@ export default function Enquiries() {
   async function exportCsv() {
     setExporting(true)
     try {
-      const blob = await api.blob('/enquiries/export?kind=newsletter')
+      const blob = await api.blob('/enquiries/export?kind=' + kind)
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
-      a.href = url; a.download = 'newsletter-subscribers.csv'
+      a.href = url; a.download = kind === 'newsletter' ? 'newsletter-subscribers.csv' : `${kind}-enquiries.csv`
       document.body.appendChild(a); a.click(); a.remove()
       setTimeout(() => URL.revokeObjectURL(url), 2000)
     } catch (e) { toast.error(e.message) }
@@ -66,7 +66,7 @@ export default function Enquiries() {
   return (
     <div>
       <PageHeader title="Enquiries">
-        {kind === 'newsletter' && <button type="button" className="btn" onClick={exportCsv} disabled={exporting}>{exporting ? 'Preparing…' : 'Export CSV'}</button>}
+        <button type="button" className="btn" onClick={exportCsv} disabled={exporting}>{exporting ? 'Preparing…' : 'Export CSV'}</button>
       </PageHeader>
 
       <div role="tablist" aria-label="Enquiry type" className="mb-4 flex flex-wrap gap-1 border-b border-sand">
@@ -120,11 +120,14 @@ export default function Enquiries() {
                       </div>
                       <Badge tone={en.handled ? 'plain' : 'accent'}>{en.handled ? 'Handled' : 'New'}</Badge>
                     </div>
-                    {kind === 'custom' && (en.style || en.size || en.budget) && (
+                    {(en.style || en.size || en.budget || en.artwork || en.amount || en.reference) && (
                       <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 text-sm">
+                        {en.artwork && <><dt className="text-mut">Artwork</dt><dd className="break-words">{en.artwork}</dd></>}
                         {en.style && <><dt className="text-mut">Style</dt><dd className="break-words">{en.style}</dd></>}
                         {en.size && <><dt className="text-mut">Size</dt><dd className="break-words">{en.size}</dd></>}
                         {en.budget && <><dt className="text-mut">Budget</dt><dd className="break-words">{en.budget}</dd></>}
+                        {en.amount && <><dt className="text-mut">Amount</dt><dd className="break-words">₹{en.amount}</dd></>}
+                        {en.reference && <><dt className="text-mut">Reference</dt><dd className="break-all">{en.reference}</dd></>}
                       </dl>
                     )}
                     <p className="mt-2 text-sm whitespace-pre-wrap break-words">{en.message}</p>

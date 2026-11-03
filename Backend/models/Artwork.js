@@ -11,6 +11,9 @@ const artworkSchema = new mongoose.Schema({
   available: { type: Boolean, default: true },
   dispatch: { type: String, default: '' },
   description: { type: String, default: '' },
+  series: { type: String, default: '' },  // gallery filter, e.g. "Nature & Wings"
+  year: { type: String, default: '' },    // shown on the artwork page
+  titleMr: { type: String, default: '' }, // Marathi title, shown when the visitor reads the site in Marathi
   ar: { type: Number, default: 1 },
   image: { type: String, default: null },
   imageAlt: { type: String, default: '' },

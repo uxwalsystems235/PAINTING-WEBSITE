@@ -51,7 +51,8 @@ export default function Checkout() {
       // The cart is kept until the order succeeds, so a failure is safe to retry.
       const order = await post('/orders', {
         customer: form,
-        items: items.map((i) => ({ slug: i.slug, variant: i.variant, qty: i.qty })),
+        // kind: 'print' marks a print of an original (same slug as the painting); the server prices it from printSizes.
+        items: items.map((i) => ({ slug: i.slug, variant: i.variant, qty: i.qty, kind: i.kind })),
       })
       clear()
       navigate(`/order/${order.orderNumber}`, { state: { order } })

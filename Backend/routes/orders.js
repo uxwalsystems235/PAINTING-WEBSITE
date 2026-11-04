@@ -4,6 +4,7 @@ const Artwork = require('../models/Artwork')
 const Order = require('../models/Order')
 const { shippingFor, validPin } = require('../config/shipping')
 const { getSettings } = require('../lib/settings')
+const { bulkPercent, unitPrice } = require('../lib/prints')
 
 const router = express.Router()
 const { FailureLimiter, envInt, perIp } = require('../lib/rateLimit')
@@ -43,20 +44,26 @@ router.post('/', perIp(createLimiter, () => envInt('ORDER_RATE_LIMIT', 10)), asy
       if (!r || typeof r !== 'object' || typeof r.slug !== 'string') return fail(res, 400, 'An item in your bag is no longer available.')
       const art = await Artwork.findOne({ slug: r.slug.trim() })
       if (!art || art.published === false) return fail(res, 400, 'An item in your bag is no longer available.')
-      if (!art.available) return fail(res, 409, `"${art.title}" has already been sold. Please remove it from your bag.`)
 
-      if (art.price == null) return fail(res, 400, `"${art.title}" is available on enquiry only. Please contact us.`)
-
-      let price = art.price
-      let variant
-      if (art.variants.length) {
-        const v = art.variants.find((x) => x.label === r.variant)
+      // A print: either a stand-alone print artwork (sizes = variants) or a print of an original (sizes =
+      // printSizes, which stay on sale after the original itself is sold). Quantity is capped per line and
+      // bulk tiers lower the unit price; the client sends the list price only for display.
+      const ofOriginal = art.type === 'original' && r.kind === 'print'
+      if (art.type === 'print' || ofOriginal) {
+        const sizes = ofOriginal ? art.printSizes : art.variants
+        if (!sizes.length) return fail(res, 400, `Prints of "${art.title}" are not available.`)
+        if (!ofOriginal && !art.available) return fail(res, 409, `"${art.title}" is no longer available. Please remove it from your bag.`)
+        const v = sizes.find((x) => x.label === r.variant)
         if (!v) return fail(res, 400, `Choose a size for "${art.title}".`)
-        price = v.price
-        variant = v.label
+        const qty = Math.min(Math.max(parseInt(r.qty, 10) || 1, 1), settings.prints.maxQty)
+        const discount = bulkPercent(settings.prints.bulk, qty)
+        items.push({ slug: art.slug, title: art.title, type: 'print', variant: v.label, price: unitPrice(v.price, qty, settings.prints.bulk), listPrice: v.price, discount, qty, preorder: !!art.printPreorder, preorderNote: art.printPreorder ? art.preorderNote || '' : '' })
+        continue
       }
-      const qty = art.type === 'original' ? 1 : Math.min(Math.max(parseInt(r.qty, 10) || 1, 1), 10)
-      items.push({ slug: art.slug, title: art.title, type: art.type, variant, price, qty })
+
+      if (!art.available) return fail(res, 409, `"${art.title}" has already been sold. Please remove it from your bag.`)
+      if (art.price == null) return fail(res, 400, `"${art.title}" is available on enquiry only. Please contact us.`)
+      items.push({ slug: art.slug, title: art.title, type: art.type, price: art.price, listPrice: art.price, discount: 0, qty: 1, preorder: !!art.preorder, preorderNote: art.preorder ? art.preorderNote || '' : '' })
     }
 
     const cap = maxPending()

@@ -42,15 +42,16 @@ function cleanArtwork(a) {
   if (!(a.price === null || (isInt(a.price) && a.price >= 0))) return null
   if (!Number.isFinite(a.ar) || a.ar < 0.3 || a.ar > 3) return null
   const image = isStr(a.image) && (a.image.startsWith('/uploads/') || a.image.startsWith('/art/')) ? a.image : null
-  const variants = Array.isArray(a.variants)
-    ? a.variants.filter((v) => v && isStr(v.label) && isInt(v.price)).map((v) => ({ label: v.label, price: v.price }))
-    : []
+  const sizes = (list) => (Array.isArray(list) ? list.filter((v) => v && isStr(v.label) && isInt(v.price) && v.price >= 0).map((v) => ({ label: v.label, price: v.price })) : [])
+  const variants = sizes(a.variants)
   return {
     slug: a.slug, title: a.title, type: a.type, medium: str(a.medium), dimensions: str(a.dimensions),
     price: a.price, available: a.available, dispatch: str(a.dispatch), description: str(a.description),
     series: str(a.series), year: str(a.year), titleMr: str(a.titleMr),
     ar: a.ar, image, imageSet: image ? cleanImageSet(a.imageSet) : [], imageAlt: str(a.imageAlt),
     poemSlug: isStr(a.poemSlug) && a.poemSlug ? a.poemSlug : null, variants,
+    printSizes: a.type === 'original' ? sizes(a.printSizes) : [], printNote: str(a.printNote),
+    preorder: a.preorder === true, printPreorder: a.printPreorder === true, preorderNote: str(a.preorderNote),
   }
 }
 
@@ -91,14 +92,26 @@ function cleanContent(c) {
   return out
 }
 
-const DEFAULT_SETTINGS = { shipping: { flat: 250, freeAbove: 10000 }, checkoutEnabled: true }
+const DEFAULT_PRINTS = { maxQty: 50, bulk: [{ minQty: 5, percentOff: 10 }, { minQty: 10, percentOff: 15 }, { minQty: 25, percentOff: 20 }] }
+const DEFAULT_SETTINGS = { shipping: { flat: 250, freeAbove: 10000 }, checkoutEnabled: true, prints: DEFAULT_PRINTS }
+
+// Older cached payloads have no prints block: fall back to the defaults rather than rejecting the whole object.
+function cleanPrints(p) {
+  if (!p || typeof p !== 'object') return DEFAULT_PRINTS
+  const maxQty = isInt(p.maxQty) && p.maxQty >= 1 ? p.maxQty : DEFAULT_PRINTS.maxQty
+  const bulk = Array.isArray(p.bulk)
+    ? p.bulk.filter((t) => t && isInt(t.minQty) && t.minQty >= 2 && isInt(t.percentOff) && t.percentOff >= 1 && t.percentOff <= 90)
+      .map((t) => ({ minQty: t.minQty, percentOff: t.percentOff })).sort((x, y) => x.minQty - y.minQty)
+    : DEFAULT_PRINTS.bulk
+  return { maxQty, bulk }
+}
 
 function cleanSettings(s) {
   if (!s || typeof s !== 'object') return null
   const sh = s.shipping
   if (!sh || !isInt(sh.flat) || sh.flat < 0 || !isInt(sh.freeAbove) || sh.freeAbove < 0) return null
   if (typeof s.checkoutEnabled !== 'boolean') return null
-  return { shipping: { flat: sh.flat, freeAbove: sh.freeAbove }, checkoutEnabled: s.checkoutEnabled }
+  return { shipping: { flat: sh.flat, freeAbove: sh.freeAbove }, checkoutEnabled: s.checkoutEnabled, prints: cleanPrints(s.prints) }
 }
 
 const FALLBACK = {

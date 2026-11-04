@@ -46,3 +46,15 @@
 
 .cause-donate { margin-top: var(--section-space); scroll-margin-top: 6rem; }
 .cause-note { margin-top: 3rem; color: var(--mut); font-size: 0.9375rem; max-width: 40rem; }
+
+/* Reviews: quotes from collectors, partners and volunteers (editable list cause.reviews). */
+.cause-block > h2 { font-size: clamp(2rem, 3.8vw, 3rem); margin-top: 0.25rem; }
+.cause-reviews { display: grid; gap: 1.5rem; margin-top: 2rem; }
+@media (min-width: 700px) { .cause-reviews { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1100px) { .cause-reviews { grid-template-columns: repeat(3, 1fr); gap: 2rem; } }
+.review { position: relative; padding: 2.25rem 1.75rem 1.75rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.review::before { content: "\201C"; position: absolute; top: 0.4rem; left: 1.25rem; font: 400 5rem/1 var(--font-serif); color: var(--gold); opacity: 0.8; pointer-events: none; }
+.review p { position: relative; font: italic 400 1.125rem/1.6 var(--font-serif); }
+.review footer { margin-top: 1.25rem; display: grid; gap: 0.2rem; }
+.review footer b { font: 500 0.6875rem/1.4 var(--font-sans); letter-spacing: 0.18em; text-transform: uppercase; }
+.review footer span { font-size: 0.875rem; color: var(--mut); }

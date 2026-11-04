@@ -1,12 +1,14 @@
 import { Link } from 'react-router-dom'
-import { canBuy, isPrint, priceLabel } from '../data/artworks'
+import { canBuy, hasPrints, inr, isPrint, printFrom, printSizesOf, priceLabel } from '../data/artworks'
 import HeroStage from '../components/HeroStage'
-import { useArtTitle, useArtwork, useArtworks, useContent, usePoem } from '../lib/ContentContext'
+import { useArtTitle, useArtworks, useContent, usePoem, useSettings } from '../lib/ContentContext'
 import { useLang } from '../lib/LangContext'
 import { useUi } from '../lib/UiContext'
 import { usePageMeta } from '../lib/usePageMeta'
 import PaintingArt from '../components/PaintingArt'
 import Newsletter from '../components/Newsletter'
+import PortraitReveal from '../components/PortraitReveal'
+import { ArtImage } from '../components/ArtCard'
 import { Arrow, ArrowLink, SectionHead } from '../components/ui'
 import { useCart } from '../context/CartContext'
 import '../home.css'
@@ -24,8 +26,10 @@ function GalleryLabel({ art }) {
       <b>{title(art)}</b>
       <span>{art.medium} · {art.dimensions}</span>
       <em>{priceLabel(art, t)}</em>
+      {!isPrint(art) && hasPrints(art) && <span className="print-tag">{t('work.printsFrom')} {inr(printFrom(art))}</span>}
       <div className="row">
         {isPrint(art) && <Link className="btn fill" to={`/art/${art.slug}`}>{t('work.chooseSize')}</Link>}
+        {!isPrint(art) && hasPrints(art) && <Link className="btn" to={`/art/${art.slug}#print`}>{t('work.choosePrint')}</Link>}
         {canBuy(art) && !isPrint(art) && <button className="btn fill" onClick={() => add({ slug: art.slug, title: art.title, type: art.type, price: art.price })}>{inCart ? t('work.added') : t('work.addToCart')}</button>}
         {!art.available && <Link className="btn" to={`/custom-art?ref=${encodeURIComponent(art.title)}`}>{t('work.commissionSimilar')}</Link>}
         {art.available && art.price == null && !isPrint(art) && <Link className="btn fill" to={`/contact?subject=acquisition&artwork=${art.slug}`}>{t('work.enquire')}</Link>}
@@ -40,6 +44,23 @@ function useFeatured(artworks, slugs) {
   const picked = String(slugs || '').split(',').map((x) => x.trim()).filter(Boolean)
     .map((slug) => artworks.find((a) => a.slug === slug)).filter(Boolean)
   return picked.length ? picked : artworks.slice(0, 3)
+}
+
+// A painting offered as a print: shown matted and framed at a uniform size, so the row stays even however the
+// paintings are proportioned. Leads straight to the print options on the painting's page.
+function PrintCard({ art }) {
+  const { t } = useLang()
+  const title = useArtTitle()
+  const n = printSizesOf(art).length
+  return (
+    <Link className="print-card" to={`/art/${art.slug}#print`} data-reveal>
+      <span className="print-frame"><span className="print-mat" style={{ aspectRatio: art.ar }}><ArtImage art={art} sizes="(min-width: 900px) 22vw, 44vw" /></span></span>
+      <span className="print-meta">
+        <b>{title(art)}</b>
+        <span>{t('work.printsFrom')} {inr(printFrom(art))} · {n} {n === 1 ? t('home.printSize') : t('home.printSizes')}</span>
+      </span>
+    </Link>
+  )
 }
 
 // Where each of the three pillars leads.
@@ -68,13 +89,12 @@ export default function Home() {
   const { t } = useLang()
   const { openDonate } = useUi()
   const title = useArtTitle()
-  const hero = useArtwork('butterflies') ?? artworks[0]
   const c = {
     eyebrow: useContent('home.heroEyebrow'), heroTitle: useContent('home.heroTitle'), heroText: useContent('home.heroText'),
     announcement: useContent('global.announcement'),
     cta1: useContent('home.heroCta1'), cta2: useContent('home.heroCta2'),
     galleryHeading: useContent('home.galleryHeading'), galleryLead: useContent('home.galleryLead'),
-    zoomHeading: useContent('home.zoomHeading'), zoomLead: useContent('home.zoomLead'),
+    printsHeading: useContent('home.printsHeading'), printsLead: useContent('home.printsLead'),
     aboutHeading: useContent('home.aboutHeading'), aboutText: useContent('home.aboutText'), aboutCta: useContent('home.aboutCta'),
     pillars: useContent('home.pillars'),
     infoHeading: useContent('home.infoHeading'), infoText: useContent('home.infoText'), infoRows: useContent('home.infoRows'),
@@ -82,12 +102,16 @@ export default function Home() {
     pills: useContent('home.purposePills'), purposeCta: useContent('home.purposeCta'),
     featured: useContent('home.featuredPoem'),
     quote: useContent('home.poemQuote'), caption: useContent('home.poemCaption'), poemLink: useContent('home.poemLink'),
-    newsletter: useContent('home.newsletterHeading'),
+    newsletter: useContent('home.newsletterHeading'), newsletterText: useContent('home.newsletterText'),
   }
   const featured = usePoem(String(c.featured || '').trim())
   usePageMeta('', c.heroText)
 
   const slides = useFeatured(artworks, useContent('home.heroSlugs'))
+
+  const printWorks = artworks.filter(hasPrints) // paintings sold as prints too (and stand-alone prints)
+
+  const { prints } = useSettings()
 
   return (
     <div>
@@ -109,8 +133,8 @@ export default function Home() {
             <ArrowLink to="/about">{c.aboutCta}</ArrowLink>
           </div>
           <div className="sketch" data-reveal>
-            {/* Continuous-line portrait (public/img/portrait-line.webp); replace with an approved likeness if preferred. */}
-            <img src="/img/portrait-line.webp" alt="Line drawing of Kalpana Jagtap, seated, hands folded" width={1200} height={1607} loading="lazy" decoding="async" />
+            {/* Line portrait that reveals her photograph on hover (components/PortraitReveal.jsx). */}
+            <PortraitReveal />
           </div>
         </div>
       </section>
@@ -143,15 +167,28 @@ export default function Home() {
         </div>
       </section>
 
-      {hero && (
-        <section id="zoom" className="section" style={{ paddingTop: 0 }}>
-          <div className="container">
-            <span className="eyebrow" data-reveal>{t('home.detail')}</span>
-            <h2 data-reveal style={{ fontSize: 'clamp(2rem, 3.8vw, 3rem)' }}>{c.zoomHeading}</h2>
-            <p className="lead" data-reveal style={{ marginTop: '1rem' }}>{c.zoomLead}</p>
-            <div className="closeup" data-reveal>
-              <div className="closeup-art"><PaintingArt art={hero} /></div>
-              <ArrowLink to={`/art/${hero.slug}`}>{t('home.open')} {title(hero)}</ArrowLink>
+      {printWorks.length > 0 && (
+        <section id="prints" className="section prints" aria-labelledby="prints-h">
+          <div className="container prints-grid">
+            <div className="prints-copy" data-reveal>
+              <span className="eyebrow">{t('home.prints')}</span>
+              <h2 id="prints-h">{c.printsHeading}</h2>
+              <p className="lead">{c.printsLead}</p>
+              {prints.bulk.length > 0 && (
+                <div className="bulk">
+                  <span className="bulk-label">{t('home.printsBulk')}</span>
+                  <ul className="bulk-tiers" aria-label={t('home.printsBulk')}>
+                    {prints.bulk.map((b) => <li key={b.minQty}><b>{b.minQty}+</b><span>{t('home.bulkCopies')}</span><em>−{b.percentOff}%</em></li>)}
+                  </ul>
+                </div>
+              )}
+              <div className="prints-foot">
+                <Link className="btn fill" to="/art?show=prints">{t('home.printsAll')}</Link>
+                <Link className="btn" to="/contact?subject=bulk">{t('detail.bulkEnquire')}</Link>
+              </div>
+            </div>
+            <div className="print-cards" data-n={Math.min(printWorks.length, 4)}>
+              {printWorks.slice(0, 4).map((a) => <PrintCard key={a.slug} art={a} />)}
             </div>
           </div>
         </section>
@@ -173,7 +210,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="purpose" className="section purpose">
+      <section id="purpose" className="section purpose band">
         <span className="eyebrow" data-reveal>{t('home.purpose')}</span>
         <div className="big" data-reveal>{c.big}</div>
         <h2 data-reveal>{c.purposeHeading}</h2>
@@ -196,10 +233,19 @@ export default function Home() {
         )}
       </section>
 
-      <section id="newsletter" className="news">
+      <section id="newsletter" className="news" aria-labelledby="news-h">
         <div className="news-grid">
-          <div data-reveal><span className="eyebrow">{t('home.newsletter')}</span><h2>{c.newsletter}</h2></div>
-          <Newsletter />
+          <div className="news-copy" data-reveal>
+            <span className="eyebrow">{t('home.newsletter')}</span>
+            <h2 id="news-h">{c.newsletter}</h2>
+            {c.newsletterText && <p className="news-text">{c.newsletterText}</p>}
+            <ul className="news-perks" aria-label={t('home.perksLabel')}>
+              {['home.perkArt', 'home.perkPoems', 'home.perkCause'].map((k) => <li key={k}>{t(k)}</li>)}
+            </ul>
+          </div>
+          <div className="news-card" data-reveal>
+            <Newsletter />
+          </div>
         </div>
       </section>
     </div>

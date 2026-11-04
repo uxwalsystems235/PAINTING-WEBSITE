@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
+import WashFlow from './WashFlow'
+import FooterCanvas from './FooterCanvas'
+import { useGSAP } from '@gsap/react'
+import { ScrollSmoother, ScrollTrigger, motionOn, scrollToY } from '../lib/smooth'
 import { useCart } from '../context/CartContext'
 import { inr } from '../data/artworks'
 import { safeUrl } from '../data/shipping'
@@ -142,7 +146,7 @@ function BackToTop() {
   }, [])
   return (
     <button type="button" className={'to-top' + (show ? ' show' : '')} tabIndex={show ? 0 : -1} aria-hidden={!show}
-      onClick={() => { window.scrollTo({ top: 0, behavior: document.documentElement.classList.contains('motion') ? 'smooth' : 'auto' }); document.getElementById('main')?.focus?.() }}>
+      onClick={() => { scrollToY(0, motionOn()); document.getElementById('main')?.focus?.() }}>
       <span aria-hidden="true">↑</span> {t('top')}
     </button>
   )
@@ -165,6 +169,8 @@ function Footer({ openDonate }) {
   const { t } = useLang()
   return (
     <footer className="foot">
+      {/* Open canvas: moving the pointer over the footer paints a stroke that fades after a few seconds. */}
+      <FooterCanvas />
       <div className="max-w-6xl mx-auto grid gap-10 md:grid-cols-[1.6fr_1fr_1fr_1fr]">
         <div>
           <p className="brand">Kalpana Jagtap</p>
@@ -195,15 +201,37 @@ export default function Layout() {
   // Hash links (e.g. /#purpose) scroll to the section once the page has rendered; other routes start at the top.
   // "#donate" with no such section on the page opens the donation dialog instead (the Cause page has one inline).
   useEffect(() => {
-    if (!hash) { window.scrollTo(0, 0); return }
+    // The page's height changes with the route, so the scroll plugins re-measure once the new page has rendered.
+    const refresh = setTimeout(() => ScrollTrigger.refresh(), 80)
+    if (!hash) { scrollToY(0, false); return () => clearTimeout(refresh) }
     const id = hash.slice(1)
     const t = setTimeout(() => {
       const el = document.getElementById(id)
-      if (el) el.scrollIntoView()
+      if (el) scrollToY(el, false)
       else if (id === 'donate') ui.openDonate()
     }, 50)
-    return () => clearTimeout(t)
+    return () => { clearTimeout(t); clearTimeout(refresh) }
   }, [pathname, hash, ui])
+
+  // Smooth scrolling (GSAP ScrollSmoother): the wrapper/content pair below is translated to lag gently behind the
+  // native scroll position. Only for visitors who have not asked for reduced motion. The header, cart drawer and
+  // back-to-top button sit outside the wrapper because fixed and sticky elements cannot live inside smoothed content.
+  useGSAP(() => {
+    if (!motionOn()) return
+    ScrollSmoother.create({ wrapper: '#smooth-wrapper', content: '#smooth-content', smooth: 1.1, smoothTouch: 0.1, effects: false })
+  }, [])
+
+  // The fixed header's height (announcement bar + nav) becomes --head-h, which the content pads itself by.
+  const headRef = useRef(null)
+  useEffect(() => {
+    const el = headRef.current
+    if (!el) return
+    const set = () => document.documentElement.style.setProperty('--head-h', `${el.offsetHeight}px`)
+    set()
+    const ro = new ResizeObserver(set)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [announcement])
 
   // One shared, quiet reveal: anything marked data-reveal fades up once as it scrolls into view.
   // Uses IntersectionObserver + CSS transitions (see index.css), so it costs no layout reads and no JS library.
@@ -236,10 +264,17 @@ export default function Layout() {
   return (
     <UiProvider value={ui}>
       <SvgDefs />
-      {announcement && <div className="bar" role="region" aria-label="Announcement">{announcement}</div>}
-      <Nav openDonate={ui.openDonate} />
-      <main id="main" className="min-h-[70vh]" tabIndex={-1}><Outlet /></main>
-      <Footer openDonate={ui.openDonate} />
+      <div className="site-head" ref={headRef}>
+        {announcement && <div className="bar" role="region" aria-label="Announcement">{announcement}</div>}
+        <Nav openDonate={ui.openDonate} />
+      </div>
+      <div id="smooth-wrapper">
+        <div id="smooth-content">
+          {/* Every page but the home page sits on the shared watercolour flow (.washed / WashFlow). */}
+          <main id="main" className={'min-h-[70vh]' + (pathname === '/' ? '' : ' washed')} tabIndex={-1}>{pathname !== '/' && <WashFlow />}<Outlet /></main>
+          <Footer openDonate={ui.openDonate} />
+        </div>
+      </div>
       <CartDrawer />
       <DonateDialog dialogRef={donateRef} />
       <BackToTop />

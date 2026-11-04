@@ -67,6 +67,31 @@ const P = {
       </g>
     </>
   ),
+  // Charcoal works: paper tone with gestural strokes, until the artist's photographs are uploaded.
+  'ephemeral-form': (
+    <>
+      <rect width="800" height="1000" fill="#ece6da" />
+      <g fill="none" stroke="#2a2724" strokeLinecap="round" filter="url(#paint)">
+        <path d="M200 760C260 520 380 420 470 300C520 240 560 260 540 330C500 470 360 560 260 700" strokeWidth="26" strokeOpacity=".75" />
+        <path d="M330 640C420 540 520 520 600 430" strokeWidth="14" strokeOpacity=".55" />
+        <path d="M150 820C300 790 480 760 650 700" strokeWidth="8" strokeOpacity=".35" />
+        <ellipse cx="470" cy="300" rx="46" ry="60" strokeWidth="10" strokeOpacity=".6" />
+      </g>
+      <rect width="800" height="1000" fill="#2a2724" opacity=".04" />
+    </>
+  ),
+  'study-in-movement': (
+    <>
+      <rect width="800" height="1000" fill="#efe9dd" />
+      <g fill="none" stroke="#1f1c1a" strokeLinecap="round" filter="url(#paint)">
+        <path d="M120 700C240 640 300 500 420 460C540 420 600 300 700 250" strokeWidth="30" strokeOpacity=".8" />
+        <path d="M160 760C300 700 380 600 470 560C560 520 640 420 720 340" strokeWidth="16" strokeOpacity=".5" />
+        <path d="M100 640C220 600 320 480 400 420" strokeWidth="10" strokeOpacity=".35" />
+        <path d="M430 470C470 540 520 620 610 700" strokeWidth="22" strokeOpacity=".7" />
+        <path d="M80 880C260 860 520 820 740 760" strokeWidth="6" strokeOpacity=".3" />
+      </g>
+    </>
+  ),
   'banaras-dawn': (
     <>
       <rect width="800" height="1000" fill="url(#g5)" />

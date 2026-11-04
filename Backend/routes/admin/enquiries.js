@@ -6,7 +6,7 @@ const { HttpError, bad } = require('../../lib/httpError')
 const { body, bool, oid, qstr, paging, escapeRegex } = require('../../lib/validate')
 
 const router = express.Router()
-const KINDS = ['general', 'custom', 'newsletter', 'acquisition', 'collaboration', 'donation']
+const KINDS = ['general', 'custom', 'newsletter', 'acquisition', 'collaboration', 'donation', 'bulk']
 
 function buildFilter(req) {
   const filter = {}

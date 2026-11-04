@@ -8,7 +8,7 @@ const router = express.Router()
 const limiter = new FailureLimiter({ name: 'enquiry-create', windowMs: envInt('RATE_LIMIT_WINDOW_MINUTES', 60) * 60 * 1000 })
 router.limiter = limiter
 const str = (v, max = 2000) => (typeof v === 'string' ? v.trim().slice(0, max) : '')
-const KINDS = ['general', 'custom', 'newsletter', 'acquisition', 'collaboration', 'donation']
+const KINDS = ['general', 'custom', 'newsletter', 'acquisition', 'collaboration', 'donation', 'bulk'] // bulk: print orders above the online limit
 
 router.post('/', perIp(limiter, () => envInt('ENQUIRY_RATE_LIMIT', 10)), async (req, res, next) => {
   try {

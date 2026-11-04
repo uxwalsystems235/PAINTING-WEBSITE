@@ -22,7 +22,7 @@ test('artwork create + read + public shape', async () => {
   const pub = await t.call('GET', '/api/public/artworks')
   assert.equal(pub.status, 200)
   assert.deepEqual(Object.keys(pub.json.items[0]).sort(), [
-    'ar', 'available', 'description', 'dimensions', 'dispatch', 'image', 'imageAlt', 'imageSet', 'medium', 'poemSlug', 'price', 'series', 'slug', 'title', 'titleMr', 'type', 'variants', 'year',
+    'ar', 'available', 'description', 'dimensions', 'dispatch', 'image', 'imageAlt', 'imageSet', 'medium', 'poemSlug', 'preorder', 'preorderNote', 'price', 'printNote', 'printPreorder', 'printSizes', 'series', 'slug', 'title', 'titleMr', 'type', 'variants', 'year',
   ])
   assert.equal(pub.headers.get('cache-control'), 'public, max-age=5, stale-while-revalidate=30')
   assert.ok(pub.headers.get('etag'))
@@ -166,12 +166,12 @@ test('content: validation, merge, public exposure, delete resets', async () => {
 
 test('settings: defaults, validation, public view', async () => {
   const d = await admin.as('GET', '/api/admin/settings')
-  assert.deepEqual(d.json, { shipping: { flat: 250, freeAbove: 10000 }, checkoutEnabled: true, holdHours: 48 })
+  assert.deepEqual(d.json, { shipping: { flat: 250, freeAbove: 10000 }, checkoutEnabled: true, holdHours: 48, prints: { maxQty: 50, bulk: [{ minQty: 5, percentOff: 10 }, { minQty: 10, percentOff: 15 }, { minQty: 25, percentOff: 20 }] } })
   for (const b of [{ shipping: { flat: -1 } }, { shipping: { flat: 100001 } }, { shipping: { freeAbove: 1.5 } }, { checkoutEnabled: 'no' }, { shipping: 'x' }]) {
     assert.equal((await admin.as('PUT', '/api/admin/settings', { body: b })).status, 400, JSON.stringify(b))
   }
   const u = await admin.as('PUT', '/api/admin/settings', { body: { shipping: { flat: 300, freeAbove: 9000 }, checkoutEnabled: true } })
-  assert.deepEqual(u.json, { shipping: { flat: 300, freeAbove: 9000 }, checkoutEnabled: true, holdHours: 48 })
+  assert.deepEqual(u.json, { shipping: { flat: 300, freeAbove: 9000 }, checkoutEnabled: true, holdHours: 48, prints: { maxQty: 50, bulk: [{ minQty: 5, percentOff: 10 }, { minQty: 10, percentOff: 15 }, { minQty: 25, percentOff: 20 }] } })
   assert.deepEqual((await t.call('GET', '/api/public/settings')).json, u.json)
   await admin.as('PUT', '/api/admin/settings', { body: { shipping: { flat: 250, freeAbove: 10000 } } })
 })

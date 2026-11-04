@@ -1,48 +1,53 @@
-import { useEffect, useRef } from 'react'
+import { useRef } from 'react'
+import { useGSAP } from '@gsap/react'
 import { Link } from 'react-router-dom'
 import { priceLabel } from '../data/artworks'
 import { useArtTitle } from '../lib/ContentContext'
 import { useLang } from '../lib/LangContext'
 import PaintingArt from './PaintingArt'
 import { ArrowLink } from './ui'
+import { ScrollTrigger, gsap, motionOn, scrollToY } from '../lib/smooth'
 
 // Pinned, scroll-driven slideshow (styles: .hero-stage in home.css). Slide 0 is the site introduction over the
 // gallery photograph; the rest are featured paintings. Each slide gets one viewport of scroll: during the first
 // quarter it sits still, then its title zooms toward the viewer and fades while the next slide arrives from a blur.
-// Everything is driven from the scroll position (no library), so the sequence is fully reversible.
+// GSAP ScrollTrigger pins the stage and scrubs a proxy value through the slides; ScrollSmoother (Layout.jsx)
+// supplies the glide, so the sequence is smooth and fully reversible.
 
 const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi)
 const ease = (t) => t * t * (3 - 2 * t)
 
 // Scroll distance given to each slide, as a multiple of the stage height. More = slower, calmer transitions.
 const PER = 1.25
-// How quickly the eased position follows the real scroll position (per 60fps frame). Lower = more inertia.
-const FOLLOW = 0.11
 
 // d = slide position relative to the eased scroll: 0 = settled, 1 = fully gone, -1 = not yet arrived.
+// Only opacity and transform are animated on the full-screen image layers: both are composited on the GPU for
+// free. A per-frame blur() on a viewport-sized layer is what made scrolling stutter, so the image no longer blurs
+// and the title keeps only a light blur as it passes through the viewer.
 function paint(slide, d) {
   const img = slide.firstElementChild
   const copy = slide.lastElementChild
   if (d <= -0.75 || d >= 1) { if (slide.style.visibility !== 'hidden') slide.style.visibility = 'hidden'; return }
-  slide.style.visibility = 'visible'
-  let io, ib, is, co, cb, cs
+  if (slide.style.visibility !== 'visible') slide.style.visibility = 'visible'
+  let io, is, co, cb, cs, z
   if (d < 0) { // arriving: d -0.75 → 0
     const t = ease((d + 0.75) / 0.75)
-    slide.style.zIndex = 2
-    io = t; ib = (1 - t) * 10; is = 1.08 - 0.08 * t
-    co = t; cb = (1 - t) * 8; cs = 0.7 + 0.3 * t
+    z = 2
+    io = t; is = 1.1 - 0.1 * t
+    co = t; cb = (1 - t) * 3; cs = 0.7 + 0.3 * t
   } else if (d < 0.3) { // settled: a slow drift only
-    slide.style.zIndex = 2
-    io = 1; ib = 0; is = 1 + d * 0.12
+    z = 2
+    io = 1; is = 1 + d * 0.12
     co = 1; cb = 0; cs = 1 + d * 0.25
   } else { // leaving: d 0.3 → 1, the title zooms through the viewer
     const t = ease((d - 0.3) / 0.7)
-    slide.style.zIndex = 3
-    io = 1 - t; ib = t * 8; is = 1.036 + t * 0.1
-    co = 1 - clamp(t * 1.4, 0, 1); cb = t * 5; cs = 1.075 + t * 3.2
+    z = 3
+    io = 1 - t; is = 1.036 + t * 0.1
+    co = 1 - clamp(t * 1.4, 0, 1); cb = t * 3; cs = 1.075 + t * 3.2
   }
-  img.style.opacity = io.toFixed(3); img.style.filter = ib > 0.05 ? `blur(${ib.toFixed(1)}px)` : 'none'; img.style.transform = `translate3d(0,0,0) scale(${is.toFixed(4)})`
-  copy.style.opacity = co.toFixed(3); copy.style.filter = cb > 0.05 ? `blur(${cb.toFixed(1)}px)` : 'none'; copy.style.transform = `translate3d(0,0,0) scale(${cs.toFixed(4)})`
+  if (slide.style.zIndex !== String(z)) slide.style.zIndex = z
+  img.style.opacity = io.toFixed(3); img.style.transform = `scale(${is.toFixed(4)})`
+  copy.style.opacity = co.toFixed(3); copy.style.filter = cb > 0.3 ? `blur(${cb.toFixed(1)}px)` : 'none'; copy.style.transform = `scale(${cs.toFixed(4)})`
 }
 
 export default function HeroStage({ featured, c }) {
@@ -51,24 +56,25 @@ export default function HeroStage({ featured, c }) {
   const { t } = useLang()
   const title = useArtTitle()
   const count = featured.length + 1
-  const motion = typeof document !== 'undefined' && document.documentElement.classList.contains('motion')
+  const motion = motionOn()
+  const trigger = useRef(null)
 
-  useEffect(() => {
+  useGSAP(() => {
     const el = root.current
     if (!el || !motion) return
-    const stage = el.firstElementChild
+    const stage = el.querySelector('.stage')
     const slides = [...stage.querySelectorAll('.slide')]
     const bar = stage.querySelector('.stage-progress')
     const last = slides.length - 1
-    let raf = 0, target = 0, current = 0, lastTime = 0, first = true
+    // Scroll after the last slide settles, as a fraction of one slide's distance: a short hold before release.
+    const HOLD = 0.12 / PER
 
-    // The section is sized so each slide owns PER viewports of scroll, plus a short hold at the end.
+    // The section is sized so each slide owns PER viewports of scroll, plus the hold. ScrollTrigger re-runs this
+    // before every refresh (resize, fonts, route change), so there is no measuring in the scroll path at all.
     const size = () => {
       const h = stage.offsetHeight || window.innerHeight
       el.style.height = `${Math.round(h * (last * PER + 1) + h * 0.12)}px`
-      return h
     }
-    const read = () => { const h = size(); target = clamp(-el.getBoundingClientRect().top / (h * PER), 0, last) }
 
     const draw = (p) => {
       slides.forEach((s, i) => paint(s, p - i))
@@ -78,38 +84,31 @@ export default function HeroStage({ featured, c }) {
       document.documentElement.classList.toggle('hero-pinned', p < last + 0.05)
     }
 
-    // The eased position chases the real one every frame, so wheel steps and flicks become one continuous glide.
-    const tick = (now) => {
-      raf = 0
-      const dt = lastTime ? Math.min(now - lastTime, 64) : 16.7
-      lastTime = now
-      const k = 1 - Math.pow(1 - FOLLOW, dt / 16.7)
-      current += (target - current) * k
-      if (Math.abs(target - current) < 0.0004) { current = target; draw(current); lastTime = 0; return }
-      draw(current)
-      raf = requestAnimationFrame(tick)
-    }
-    const schedule = () => {
-      read()
-      if (first) { first = false; current = target } // a reload mid-sequence starts in place, not from the top
-      if (!raf) raf = requestAnimationFrame(tick)
-    }
-    schedule()
-    addEventListener('scroll', schedule, { passive: true })
-    addEventListener('resize', schedule)
-    return () => {
-      removeEventListener('scroll', schedule); removeEventListener('resize', schedule); cancelAnimationFrame(raf)
-      document.documentElement.classList.remove('hero-pinned'); el.style.height = ''
-    }
-  }, [motion, count])
+    // A proxy value scrubbed from 0 to the end of the sequence; ScrollTrigger pins the stage for the section's
+    // whole height. scrub: true follows the (already smoothed) scroll position directly, so there is no double lag.
+    size()
+    const pos = { p: 0 }
+    const tween = gsap.to(pos, { p: last + HOLD, ease: 'none', onUpdate: () => draw(Math.min(pos.p, last)) })
+    trigger.current = ScrollTrigger.create({
+      trigger: el, start: 'top top', end: 'bottom bottom', pin: stage, pinSpacing: false, animation: tween, scrub: true,
+      invalidateOnRefresh: true, onRefreshInit: size,
+      onToggle: (self) => document.documentElement.classList.toggle('hero-pinned', self.isActive),
+    })
+    draw(0)
+    // Fonts and the gallery image can shift the stage a little after the first paint: measure once more then.
+    const settle = setTimeout(() => ScrollTrigger.refresh(), 600)
+    return () => { clearTimeout(settle); trigger.current = null; document.documentElement.classList.remove('hero-pinned'); el.style.height = '' }
+  }, { scope: root, dependencies: [motion, count] })
 
   // The round button advances one slide; after the last slide it scrolls on to the next section.
   const next = () => {
     const el = root.current
-    const per = (el.firstElementChild.offsetHeight || window.innerHeight) * PER
-    const p = -el.getBoundingClientRect().top / per
-    const target = motion && p < count - 1 - 0.02 ? window.scrollY + per * (Math.floor(p + 0.02) + 1 - p) : el.getBoundingClientRect().bottom + window.scrollY
-    window.scrollTo({ top: target, behavior: 'smooth' })
+    const st = trigger.current
+    const stage = el.querySelector('.stage')
+    const per = (stage.offsetHeight || window.innerHeight) * PER
+    if (!st) { scrollToY(el.getBoundingClientRect().bottom + window.scrollY, true); return }
+    const p = (window.scrollY - st.start) / per
+    scrollToY(p < count - 1 - 0.02 ? st.start + per * (Math.floor(p + 0.02) + 1) : st.end + per * 0.02, true)
   }
 
   return (

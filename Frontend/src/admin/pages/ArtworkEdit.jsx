@@ -8,16 +8,17 @@ import { deepEqual, fp, isInt, moveItem, SLUG_RE, slugify } from '../util.js'
 import MediaPicker from './MediaPicker.jsx'
 
 const BLANK = {
-  slug: '', title: '', titleMr: '', type: 'original', medium: '', dimensions: '', price: '', onEnquiry: false, available: true,
-  dispatch: '', description: '', series: '', year: '', ar: '0.8', image: null, imageAlt: '', poemSlug: '', variants: [], published: true,
+  slug: '', title: '', titleMr: '', type: 'original', medium: '', dimensions: '', price: '', onEnquiry: false, available: true, preorder: false, printPreorder: false, preorderNote: '',
+  dispatch: '', description: '', series: '', year: '', ar: '0.8', image: null, imageAlt: '', poemSlug: '', variants: [], printSizes: [], printNote: '', published: true,
 }
 
 const fromArtwork = (a) => ({
   slug: a.slug, title: a.title, titleMr: a.titleMr || '', type: a.type, medium: a.medium || '', dimensions: a.dimensions || '',
-  price: a.price == null ? '' : String(a.price), onEnquiry: a.price == null, available: !!a.available,
+  price: a.price == null ? '' : String(a.price), onEnquiry: a.price == null, available: !!a.available, preorder: !!a.preorder, printPreorder: !!a.printPreorder, preorderNote: a.preorderNote || '',
   dispatch: a.dispatch || '', description: a.description || '', series: a.series || '', year: a.year || '', ar: String(a.ar ?? 0.8), image: a.image || null,
   imageAlt: a.imageAlt || '', poemSlug: a.poemSlug || '',
-  variants: (a.variants || []).map((v) => ({ label: v.label, price: String(v.price) })), published: !!a.published,
+  variants: (a.variants || []).map((v) => ({ label: v.label, price: String(v.price) })),
+  printSizes: (a.printSizes || []).map((v) => ({ label: v.label, price: String(v.price) })), printNote: a.printNote || '', published: !!a.published,
 })
 
 function validate(f, creating) {
@@ -38,6 +39,7 @@ function validate(f, creating) {
     if (!isInt(f.price) || Number(f.price) < 0 || Number(f.price) > 10000000) e.price = 'Enter a whole number of rupees from 0 to 1,00,00,000, or tick On enquiry.'
   }
   if (f.dispatch.length > 40) e.dispatch = 'Keep this to 40 characters.'
+  if (f.preorderNote.length > 120) e.preorderNote = 'Keep this to 120 characters.'
   if (f.description.length > 2000) e.description = 'Keep the description to 2000 characters.'
   const ar = Number(f.ar)
   if (f.ar === '' || !Number.isFinite(ar) || ar < 0.3 || ar > 3) e.ar = 'Enter a ratio (width ÷ height) between 0.3 and 3.'
@@ -50,6 +52,15 @@ function validate(f, creating) {
     if (!v.label.trim() || v.label.length > 40) e[`v${i}l`] = 'Label 1 to 40 characters.'
     if (!isInt(v.price) || Number(v.price) < 0 || Number(v.price) > 10000000) e[`v${i}p`] = 'Whole rupees, 0 or more.'
   })
+  if (f.type === 'original') {
+    if (f.printSizes.length > 10) e.printSizes = 'At most 10 print sizes.'
+    if (new Set(f.printSizes.map((v) => v.label.trim())).size !== f.printSizes.length) e.printSizes = 'Each print size needs a different label.'
+    f.printSizes.forEach((v, i) => {
+      if (!v.label.trim() || v.label.length > 40) e[`ps${i}l`] = 'Label 1 to 40 characters.'
+      if (!isInt(v.price) || Number(v.price) < 0 || Number(v.price) > 10000000) e[`ps${i}p`] = 'Whole rupees, 0 or more.'
+    })
+    if (f.printNote.length > 200) e.printNote = 'Keep this to 200 characters.'
+  }
   return e
 }
 
@@ -71,6 +82,7 @@ function ArtworkForm({ initial, poems, id }) {
 
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }))
   const setVariant = (i, k, v) => setF((p) => ({ ...p, variants: p.variants.map((x, j) => (j === i ? { ...x, [k]: v } : x)) }))
+  const setSize = (i, k, v) => setF((p) => ({ ...p, printSizes: p.printSizes.map((x, j) => (j === i ? { ...x, [k]: v } : x)) }))
 
   async function submit(ev) {
     ev.preventDefault()
@@ -84,9 +96,12 @@ function ArtworkForm({ initial, poems, id }) {
     const body = {
       slug: f.slug, title: f.title.trim(), titleMr: f.titleMr.trim(), type: f.type, medium: f.medium.trim(), dimensions: f.dimensions.trim(),
       price: f.onEnquiry ? null : Number(f.price), available: f.available, dispatch: f.dispatch.trim(),
+      preorder: f.preorder, printPreorder: f.printPreorder, preorderNote: f.preorderNote.trim(),
       description: f.description, series: f.series.trim(), year: f.year.trim(), ar: Number(f.ar), image: f.image || null, imageAlt: f.imageAlt.trim(),
       poemSlug: f.poemSlug || null, published: f.published,
       variants: f.type === 'print' ? f.variants.map((v) => ({ label: v.label.trim(), price: Number(v.price) })) : [],
+      printSizes: f.type === 'original' ? f.printSizes.map((v) => ({ label: v.label.trim(), price: Number(v.price) })) : [],
+      printNote: f.type === 'original' ? f.printNote.trim() : '',
     }
     setBusy(true)
     try {
@@ -174,8 +189,49 @@ function ArtworkForm({ initial, poems, id }) {
             <button type="button" className="btn" disabled={f.variants.length >= 10} onClick={() => set('variants', [...f.variants, { label: '', price: '' }])}>Add variant</button>
           </div>
         )}
+        {f.type === 'original' && (
+          <div role="group" aria-labelledby="ps-h" className="border border-sand p-3 space-y-3">
+            <h3 id="ps-h" className="text-lg">Prints of this painting</h3>
+            <p className="text-xs text-mut">Optional. Add a size for each print you offer, with its single-copy price. The website then shows “Prints from ₹…” on the painting and lets customers choose a size and quantity; bulk discounts come from Settings. Prints stay on sale after the original is sold. Leave empty if there are no prints.</p>
+            {errors.printSizes && <p id="printSizes-err" role="alert" className="text-xs text-danger">{errors.printSizes}</p>}
+            {f.printSizes.map((v, i) => (
+              <div key={i} className="grid grid-cols-[1fr_7rem] sm:grid-cols-[1fr_9rem_auto] gap-2 items-start">
+                <Field label={`Size ${i + 1}`} id={`ps${i}l`} error={errors[`ps${i}l`]} help={i === 0 ? 'For example: A3 · 30 × 42 cm' : undefined}>
+                  <input {...fp(`ps${i}l`, errors[`ps${i}l`])} className="input" maxLength={60} value={v.label} onChange={(e) => setSize(i, 'label', e.target.value)} />
+                </Field>
+                <Field label="Price (₹)" id={`ps${i}p`} error={errors[`ps${i}p`]}>
+                  <input {...fp(`ps${i}p`, errors[`ps${i}p`])} className="input" inputMode="numeric" value={v.price} onChange={(e) => setSize(i, 'price', e.target.value)} />
+                </Field>
+                <span className="flex gap-1 col-span-2 sm:col-span-1 sm:mt-6">
+                  <button type="button" className="btn" disabled={i === 0} onClick={() => set('printSizes', moveItem(f.printSizes, i, -1))} aria-label={`Move size ${i + 1} up`}>Up</button>
+                  <button type="button" className="btn" disabled={i === f.printSizes.length - 1} onClick={() => set('printSizes', moveItem(f.printSizes, i, 1))} aria-label={`Move size ${i + 1} down`}>Down</button>
+                  <button type="button" className="btn danger" onClick={() => set('printSizes', f.printSizes.filter((_, j) => j !== i))} aria-label={`Remove size ${i + 1}`}>Remove</button>
+                </span>
+              </div>
+            ))}
+            <button type="button" className="btn" disabled={f.printSizes.length >= 10} onClick={() => set('printSizes', [...f.printSizes, { label: '', price: '' }])}>Add print size</button>
+            {f.printSizes.length > 0 && (
+              <Field label="Print note (optional)" id="printNote" error={errors.printNote} help="Shown with the sizes, e.g. “Giclée print on archival cotton paper, signed.”" counter={<Counter value={f.printNote} max={200} />}>
+                <input {...fp('printNote', errors.printNote, true)} className="input" value={f.printNote} onChange={(e) => set('printNote', e.target.value)} />
+              </Field>
+            )}
+          </div>
+        )}
         <div className="flex flex-wrap gap-x-8 gap-y-3">
           <Check id="available" label="Available to buy" checked={f.available} onChange={(v) => set('available', v)} />
+        </div>
+        <div role="group" aria-labelledby="pre-h" className="border border-sand p-3 space-y-3">
+          <h3 id="pre-h" className="text-lg">Pre-order</h3>
+          <p className="text-xs text-mut">Sell before it is ready: customers pay now and you dispatch later. The website labels the work “Pre-order” and shows the date you give.</p>
+          <div className="flex flex-wrap gap-x-8 gap-y-3">
+            {f.type === 'original' && <Check id="preorder" label="The original is on pre-order" checked={f.preorder} onChange={(v) => set('preorder', v)} />}
+            <Check id="printPreorder" label={f.type === 'original' ? 'Its prints are on pre-order' : 'This print is on pre-order'} checked={f.printPreorder} onChange={(v) => set('printPreorder', v)} />
+          </div>
+          {(f.preorder || f.printPreorder) && (
+            <Field label="Expected dispatch" id="preorderNote" error={errors.preorderNote} help="For example: Ships from 20 December 2026" counter={<Counter value={f.preorderNote} max={120} />}>
+              <input {...fp('preorderNote', errors.preorderNote, true)} className="input" value={f.preorderNote} onChange={(e) => set('preorderNote', e.target.value)} />
+            </Field>
+          )}
           <Check id="published" label="Published on the website" checked={f.published} onChange={(v) => set('published', v)} />
         </div>
       </fieldset>

@@ -12,10 +12,10 @@ const { body, str, int, bool, oid, isObj, SLUG } = require('../../lib/validate')
 const router = express.Router()
 
 const EDITABLE = ['title', 'type', 'medium', 'dimensions', 'price', 'available', 'dispatch', 'description', 'ar',
-  'series', 'year', 'titleMr', 'image', 'imageAlt', 'poemSlug', 'variants', 'published', 'order']
+  'series', 'year', 'titleMr', 'image', 'imageAlt', 'poemSlug', 'variants', 'printSizes', 'printNote', 'preorder', 'printPreorder', 'preorderNote', 'published', 'order']
 const DEFAULTS = {
   medium: '', dimensions: '', price: null, available: true, dispatch: '', description: '', ar: 1,
-  series: '', year: '', titleMr: '', image: null, imageAlt: '', poemSlug: null, variants: [], published: true,
+  series: '', year: '', titleMr: '', image: null, imageAlt: '', poemSlug: null, variants: [], printSizes: [], printNote: '', preorder: false, printPreorder: false, preorderNote: '', published: true,
 }
 const IMAGE = /^\/(uploads|art)\/[A-Za-z0-9._\-/]*$/
 
@@ -53,6 +53,17 @@ async function validate(src) {
     return { label: str(v.label, `variants[${i}].label`, { min: 1, max: 40 }), price: int(v.price, `variants[${i}].price`, 0, 10000000) }
   })
   if (out.type === 'print' && out.variants.length < 1) throw bad('A print needs at least one variant.')
+  // Print sizes belong to originals ("also available as a print"); a stand-alone print uses variants instead.
+  if (!Array.isArray(src.printSizes) || src.printSizes.length > 10) throw bad('printSizes must be a list of at most 10 items.')
+  out.printSizes = out.type === 'print' ? [] : src.printSizes.map((v, i) => {
+    if (!isObj(v)) throw bad(`printSizes[${i}] must be an object.`)
+    return { label: str(v.label, `printSizes[${i}].label`, { min: 1, max: 40 }), price: int(v.price, `printSizes[${i}].price`, 0, 10000000) }
+  })
+  if (new Set(out.printSizes.map((v) => v.label)).size !== out.printSizes.length) throw bad('Each print size needs a different label.')
+  out.printNote = str(src.printNote, 'printNote', { max: 200 })
+  out.preorder = bool(src.preorder, 'preorder')
+  out.printPreorder = bool(src.printPreorder, 'printPreorder')
+  out.preorderNote = str(src.preorderNote, 'preorderNote', { max: 120 })
   out.published = bool(src.published, 'published')
   if (src.order !== undefined) out.order = int(src.order, 'order', 0, 1000000)
   return out
@@ -106,6 +117,7 @@ router.put('/:id', async (req, res) => {
   if (b.slug !== undefined && b.slug !== art.slug) throw bad('slug cannot be changed.')
   const current = Object.fromEntries(EDITABLE.map((k) => [k, art[k]]))
   current.variants = art.variants.map((v) => ({ label: v.label, price: v.price }))
+  current.printSizes = (art.printSizes || []).map((v) => ({ label: v.label, price: v.price }))
   const data = await validate({ ...current, ...pick(b) })
   art.set(data)
   await art.save()

@@ -9,6 +9,8 @@ const publicArtwork = (a, variantMap) => ({
   series: a.series || '', year: a.year || '', titleMr: a.titleMr || '',
   poemSlug: a.poemSlug || null, imageSet: imageSetFor(a, variantMap),
   variants: (a.variants || []).map((v) => ({ label: v.label, price: v.price })),
+  printSizes: (a.printSizes || []).map((v) => ({ label: v.label, price: v.price })), printNote: a.printNote || '',
+  preorder: !!a.preorder, printPreorder: !!a.printPreorder, preorderNote: a.preorderNote || '',
 })
 
 const adminArtwork = (a, variantMap) => ({
@@ -29,7 +31,7 @@ const adminOrder = (o) => ({
     name: o.customer?.name || '', email: o.customer?.email || '', phone: o.customer?.phone || '',
     address: o.customer?.address || '', city: o.customer?.city || '', state: o.customer?.state || '', pin: o.customer?.pin || '',
   },
-  items: (o.items || []).map((i) => ({ slug: i.slug, title: i.title, type: i.type, variant: i.variant || '', price: i.price, qty: i.qty })),
+  items: (o.items || []).map((i) => ({ slug: i.slug, title: i.title, type: i.type, variant: i.variant || '', price: i.price, qty: i.qty, listPrice: i.listPrice ?? i.price, discount: i.discount || 0, preorder: !!i.preorder, preorderNote: i.preorderNote || '' })),
   subtotal: o.subtotal, shipping: o.shipping, total: o.total, status: o.status,
   note: o.note || '', trackingNote: o.trackingNote || '',
   statusHistory: (o.statusHistory || []).map((h) => ({ status: h.status, at: h.at, by: h.by })),

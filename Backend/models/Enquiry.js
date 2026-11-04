@@ -3,7 +3,7 @@ const mongoose = require('mongoose')
 const enquirySchema = new mongoose.Schema({
   // general/acquisition/collaboration/donation come from the contact page and the donation panel; custom from the
   // commission form; newsletter from the sign-up box.
-  kind: { type: String, enum: ['general', 'custom', 'newsletter', 'acquisition', 'collaboration', 'donation'], required: true },
+  kind: { type: String, enum: ['general', 'custom', 'newsletter', 'acquisition', 'collaboration', 'donation', 'bulk'], required: true },
   name: { type: String, default: '' },
   email: { type: String, required: true },
   style: String,

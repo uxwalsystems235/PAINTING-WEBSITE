@@ -3,6 +3,7 @@ const { getSettings, saveSettings } = require('../../lib/settings')
 const { audit } = require('../../lib/audit')
 const { bad } = require('../../lib/httpError')
 const { body, int, bool, isObj } = require('../../lib/validate')
+const { cleanBulk } = require('../../lib/prints')
 
 const router = express.Router()
 
@@ -18,9 +19,22 @@ router.put('/', async (req, res) => {
   }
   if (b.checkoutEnabled !== undefined) next.checkoutEnabled = bool(b.checkoutEnabled, 'checkoutEnabled')
   if (b.holdHours !== undefined) next.holdHours = int(b.holdHours, 'holdHours', 0, 8760)
+  if (b.prints !== undefined) {
+    if (!isObj(b.prints)) throw bad('prints must be an object.')
+    if (b.prints.maxQty !== undefined) next.prints.maxQty = int(b.prints.maxQty, 'prints.maxQty', 1, 1000)
+    if (b.prints.bulk !== undefined) {
+      if (!Array.isArray(b.prints.bulk) || b.prints.bulk.length > 10) throw bad('prints.bulk must be a list of at most 10 tiers.')
+      const tiers = b.prints.bulk.map((t, i) => {
+        if (!isObj(t)) throw bad(`prints.bulk[${i}] must be an object.`)
+        return { minQty: int(t.minQty, `prints.bulk[${i}].minQty`, 2, 1000), percentOff: int(t.percentOff, `prints.bulk[${i}].percentOff`, 1, 90) }
+      })
+      if (new Set(tiers.map((t) => t.minQty)).size !== tiers.length) throw bad('Each bulk tier needs a different minimum quantity.')
+      next.prints.bulk = cleanBulk(tiers)
+    }
+  }
   await saveSettings(next)
   await audit(req.admin, 'update', 'settings', 'site',
-    `Settings: shipping ${next.shipping.flat} (free above ${next.shipping.freeAbove}), checkout ${next.checkoutEnabled ? 'on' : 'off'}, hold ${next.holdHours}h`)
+    `Settings: shipping ${next.shipping.flat} (free above ${next.shipping.freeAbove}), checkout ${next.checkoutEnabled ? 'on' : 'off'}, hold ${next.holdHours}h, prints max ${next.prints.maxQty} with ${next.prints.bulk.length} bulk tiers`)
   res.json(next)
 })
 

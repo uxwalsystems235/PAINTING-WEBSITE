@@ -72,6 +72,24 @@ Within about a minute the painting appears on the website.
 
 ---
 
+## Selling prints of a painting (and bulk orders)
+
+A painting can be sold as the original **and** as signed prints in several sizes. Prints keep selling after the original is sold.
+
+1. Open the painting under **Artworks** (type *Original*).
+2. In **Prints of this painting**, click **Add print size** for each size you offer, for example `A3 · 30 × 42 cm` with its price for one copy. Add an optional print note such as "Giclée print on archival cotton paper, signed".
+3. Save. The website now shows "Prints from ₹…" on the painting, a **Prints** filter in the gallery, a prints row on the home page, and on the painting's page a box where a customer picks the size and the number of copies.
+
+**Bulk orders.** Under **Settings → Prints and bulk orders** you set the most copies of one print a customer can put in one order line (larger quantities are sent to the contact form as a *Bulk print order* enquiry, which has its own tab under **Enquiries**), and the discount tiers, for example 5+ copies 10 % off, 10+ copies 15 % off. The discount applies automatically to the single-copy price when the customer chooses the quantity, and the order shows the list price, the discounted price and the percentage for each line. Remove every tier if you do not want discounts.
+
+A stand-alone print that has no original on the site is still added as an artwork of type *Print* with its sizes under **Print variants**; the same quantity limit and discounts apply to it.
+
+## Pre-orders (sell before it is ready)
+
+A painting that is still on the easel, or a print run that has not come back from the printer yet, can be sold in advance. Open the artwork and, under **Pre-order**, tick **The original is on pre-order** and/or **Its prints are on pre-order**, then type the expected dispatch, for example "Ships from 20 December 2026". Save.
+
+The website then shows a terracotta **Pre-order** label on the painting, says "pay now, dispatched when ready" with your date, and the buttons read "Pre-order now" or "Pre-order this print". Pre-order lines are marked in the customer's bag and in each order under **Orders**, with the date, so you can see what still has to be dispatched. Untick the boxes when the work is ready; existing orders keep their pre-order note.
+
 ## How to add a poem
 
 1. Click **Poems**, then **Add poem**.

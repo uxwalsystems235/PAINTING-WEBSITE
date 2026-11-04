@@ -32,14 +32,16 @@ The window for the two POST limits is `RATE_LIMIT_WINDOW_MINUTES` (default 60). 
 | GET | `/api/public/artworks` | `{ items: PublicArtwork[] }` published only, sorted by `order` asc |
 | GET | `/api/public/poems` | `{ items: PublicPoem[] }` published only, sorted by `order` asc |
 | GET | `/api/public/content` | `{ content: { [key]: string \| ListItem[] } }` only keys an admin has edited |
-| GET | `/api/public/settings` | `{ shipping: { flat: int, freeAbove: int }, checkoutEnabled: boolean, holdHours: int }` |
+| GET | `/api/public/settings` | `{ shipping: { flat: int, freeAbove: int }, checkoutEnabled: boolean, holdHours: int, prints: { maxQty: int, bulk: [{ minQty, percentOff }] } }` |
 
 **Caching:** all `/api/public/*` responses send `Cache-Control: public, max-age=5, stale-while-revalidate=30` and an `ETag` (conditional GET -> 304), so admin edits and sold-out changes show up within seconds.
 
 ```
 PublicArtwork = { slug, title, type: 'original'|'print', medium, dimensions, price: int|null /* INR, null = on enquiry */,
   available: boolean, dispatch, description, ar: number /* width/height */, image: string|null, imageAlt: string,
-  poemSlug: string|null, variants: [{ label, price }],
+  poemSlug: string|null, variants: [{ label, price }] /* sizes of a stand-alone print */,
+  printSizes: [{ label, price }] /* prints of an original; [] = none */, printNote: string,
+  preorder: boolean /* original is bought now, dispatched later */, printPreorder: boolean /* same for its prints */, preorderNote: string,
   imageSet: null | { srcset: string /* '/uploads/x-800.webp 800w, /uploads/x-1600.webp 1600w' */, variants: [{ width, url }] } }
 PublicPoem    = { slug, lang: 'en'|'mr', title, theme, body /* keeps \n line breaks */ }
 ListItem      = { [field]: string }   // e.g. { name, desc } for pillars
@@ -49,6 +51,8 @@ ListItem      = { [field]: string }   // e.g. { name, desc } for pillars
 
 `image` is either a path under the **API origin** starting with `/uploads/` (admin uploads) or a path under the **website origin** starting with `/art/` (bundled placeholder photos), or null (the site then draws its built-in SVG placeholder by slug if it has one).
 `GET /api/orders/:n` additionally returns `trackingNote` (string). `POST /api/orders` returns 503 `{ error }` when `checkoutEnabled` is false, and computes shipping from the settings below.
+
+Order items are `{ slug, variant?, qty?, kind? }`. `kind: 'print'` on an original's slug orders a print of it (`variant` must be one of its `printSizes`); a `type: 'print'` artwork uses its `variants`. Print quantity is clamped to `settings.prints.maxQty`; the unit price is the size price minus the highest bulk tier the quantity reaches (`percentOff`, rounded to whole rupees). Prints of an original stay orderable after the original is sold and never claim it. Originals are always qty 1.
 
 ## 2. Auth (cookie session)
 
@@ -76,6 +80,8 @@ AdminArtwork = PublicArtwork & { id, published: boolean, order: int, createdAt, 
 Validation: slug /^[a-z0-9]+(-[a-z0-9]+)*$/ ≤60 unique; title 1–120; type enum; medium ≤120; dimensions ≤60; price null or int 0–10000000;
 available bool; dispatch ≤40; description ≤2000; ar number 0.3–3; image null or string ≤200 starting '/uploads/' or '/art/'; imageAlt ≤200;
 poemSlug null or an existing poem slug; variants ≤10 {label 1–40, price int}. A type:'print' needs ≥1 variant.
+printSizes ≤10 {label 1–40 unique, price int 0–10000000} (ignored, stored as [], for type:'print'); printNote ≤200.
+preorder bool; printPreorder bool; preorderNote ≤120. Order items copy the flag as `preorder` (+ `preorderNote`) at order time.
 ```
 Setting `available:false` on an original stops purchase; the order endpoint's atomic claim keeps working as before.
 **Seed tombstones:** deleting a painting or poem records its slug so `npm run seed` does not re-create it (`npm run seed -- --force` ignores and clears the records). Creating an item with that slug again clears its record.
@@ -91,7 +97,7 @@ Validation: slug as above; lang en|mr; title 1–120; theme ≤40; body 1–5000
 `GET /orders?status=&q=&page=1&pageSize=20` (q matches orderNumber, customer name/email/phone) → paged `AdminOrder[]` newest first
 `GET /orders/:id` → AdminOrder · `PATCH /orders/:id` `{ status?, note?, trackingNote? }` → AdminOrder
 ```
-AdminOrder = { id, orderNumber, customer: {name,email,phone,address,city,state,pin}, items: [{slug,title,type,variant,price,qty}],
+AdminOrder = { id, orderNumber, customer: {name,email,phone,address,city,state,pin}, items: [{slug,title,type,variant,price /* unit charged */,qty,listPrice,discount /* bulk % */}],
   subtotal, shipping, total, status, note /* internal ≤2000 */, trackingNote /* shown to the customer ≤500 */,
   statusHistory: [{ status, at, by /* admin email */ }], createdAt, updatedAt }
 status ∈ pending-payment | paid | dispatched | delivered | cancelled
@@ -110,7 +116,7 @@ Key: `/^[a-z0-9]+(\.[A-Za-z0-9]+)*$/`, ≤ 80 chars, ≤ 300 keys total. Value: 
 The list of editable keys, labels, groups and defaults lives in the frontend file `Frontend/src/content/schema.js` (`CONTENT_FIELDS`).
 
 ### Settings
-`GET /settings` / `PUT /settings` → `{ shipping: { flat: int 0–100000 (default 250), freeAbove: int 0–10000000 (default 10000) }, checkoutEnabled: boolean (default true), holdHours: int 0–8760 (default 48; 0 = never auto-cancel unpaid orders) }`. PUT merges: send only what changes.
+`GET /settings` / `PUT /settings` → `{ shipping: { flat: int 0–100000 (default 250), freeAbove: int 0–10000000 (default 10000) }, checkoutEnabled: boolean (default true), holdHours: int 0–8760 (default 48; 0 = never auto-cancel unpaid orders), prints: { maxQty: int 1–1000 (default 50), bulk: ≤10 × { minQty: int 2–1000 unique, percentOff: int 1–90 } (default 5+ → 10 %, 10+ → 15 %, 25+ → 20 %; stored sorted by minQty) } }`. PUT merges: send only what changes.
 
 ### Media
 `GET /media` → `{ items: Media[] }` newest first · `POST /media` multipart field `file` (+ optional text field `alt` ≤200) → 201 Media · `PATCH /media/:id` `{ alt }` · `DELETE /media/:id` (204; deletes the file; 409 if an artwork's `image` still uses its url).

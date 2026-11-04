@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { isPrint, priceLabel } from '../data/artworks'
+import { hasPrints, inr, isPreorder, isPrint, printFrom, printsPreorder, priceLabel } from '../data/artworks'
 import { useArtTitle, useArtwork } from '../lib/ContentContext'
 import { useLang } from '../lib/LangContext'
 import PaintingArt from './PaintingArt'
@@ -12,8 +12,9 @@ export function ArtImage({ art, className = '', eager = false, sizes }) {
 
 export function Badge({ art }) {
   const { t } = useLang()
-  const label = !art.available ? t('work.privateCollection') : isPrint(art) ? t('work.print') : art.price == null ? t('work.onEnquiry') : t('work.original')
-  return <span className="badge">{label}</span>
+  const pre = isPreorder(art)
+  const label = !art.available ? t('work.privateCollection') : pre ? t('work.preorder') : isPrint(art) ? t('work.print') : art.price == null ? t('work.onEnquiry') : t('work.original')
+  return <span className={'badge' + (pre ? ' badge-pre' : '')}>{label}</span>
 }
 
 // Card image is roughly a quarter of a 76rem container at the widest, so these sizes cover the masonry columns.
@@ -36,6 +37,7 @@ export default function ArtCard({ art, eager = false }) {
         <span>{meta}</span>
         {sub && <span className="series">{sub}</span>}
         <em>{priceLabel(art, t)}</em>
+        {!isPrint(art) && hasPrints(art) && <span className="print-tag">{t('work.printsFrom')} {inr(printFrom(art))}{printsPreorder(art) && <> · {t('work.preorder')}</>}</span>}
       </div>
     </div>
   )

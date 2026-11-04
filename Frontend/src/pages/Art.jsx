@@ -1,12 +1,16 @@
 import { Link, useSearchParams } from 'react-router-dom'
 import ArtCard from '../components/ArtCard'
 import { PageHead } from '../components/ui'
+import { hasPrints } from '../data/artworks'
+import { mediumCategory } from '../data/artworks'
 import { useArtworks, useContent } from '../lib/ContentContext'
 import { useT } from '../lib/LangContext'
 import { usePageMeta } from '../lib/usePageMeta'
 
-// Gallery with two small filters: availability (all / available / private collection) and series.
-// Both live in the URL (?show=available&series=...) so a filtered view can be shared or bookmarked.
+// Gallery with two small filters: availability (all / available / private collection / prints) and medium family.
+// Both live in the URL (?show=available&medium=oil), as does ?series= (linked from an artwork page), so a filtered
+// view can be shared or bookmarked.
+const MEDIA = ['oil', 'acrylic', 'watercolor', 'charcoal', 'other']
 export default function Art() {
   const t = useT()
   const { artworks } = useArtworks()
@@ -17,7 +21,9 @@ export default function Art() {
   const [params, setParams] = useSearchParams()
   usePageMeta(heading, intro)
 
-  const show = ['available', 'sold'].includes(params.get('show')) ? params.get('show') : ''
+  const show = ['available', 'sold', 'prints'].includes(params.get('show')) ? params.get('show') : ''
+  const mediaPresent = MEDIA.filter((m) => artworks.some((a) => mediumCategory(a) === m))
+  const medium = mediaPresent.includes(params.get('medium')) ? params.get('medium') : ''
   const seriesList = [...new Set(artworks.map((a) => a.series).filter(Boolean))]
   const series = seriesList.includes(params.get('series')) ? params.get('series') : ''
 
@@ -28,8 +34,9 @@ export default function Art() {
   }
 
   const list = artworks.filter((a) =>
-    (show === '' || (show === 'available' ? a.available : !a.available)) && (series === '' || a.series === series))
+    (show === '' || (show === 'available' ? a.available : show === 'prints' ? hasPrints(a) : !a.available)) && (medium === '' || mediumCategory(a) === medium) && (series === '' || a.series === series))
   const soldCount = artworks.filter((a) => !a.available).length
+  const printCount = artworks.filter(hasPrints).length
 
   return (
     <div className="section" style={{ paddingTop: 0 }}>
@@ -42,21 +49,30 @@ export default function Art() {
               <button type="button" onClick={() => update({ show: '' })} aria-pressed={show === ''}>{t('art.all')} <small>{artworks.length}</small></button>
               <button type="button" onClick={() => update({ show: 'available' })} aria-pressed={show === 'available'}>{t('art.available')} <small>{artworks.length - soldCount}</small></button>
               {soldCount > 0 && <button type="button" onClick={() => update({ show: 'sold' })} aria-pressed={show === 'sold'}>{t('work.privateCollection')} <small>{soldCount}</small></button>}
+              {printCount > 0 && <button type="button" onClick={() => update({ show: 'prints' })} aria-pressed={show === 'prints'}>{t('art.prints')} <small>{printCount}</small></button>}
             </div>
           </div>
-          {seriesList.length > 1 && (
+          {mediaPresent.length > 1 && (
+            <div className="filter-group" role="group" aria-label={t('art.medium')}>
+              <span className="filter-label">{t('art.medium')}</span>
+              <div className="chips">
+                <button type="button" className="chip" onClick={() => update({ medium: '' })} aria-pressed={medium === ''}>{t('art.all')}</button>
+                {mediaPresent.map((m) => <button key={m} type="button" className="chip" onClick={() => update({ medium: m })} aria-pressed={medium === m}>{t('art.cat.' + m)}</button>)}
+              </div>
+            </div>
+          )}
+          {series && (
             <div className="filter-group" role="group" aria-label={t('art.series')}>
               <span className="filter-label">{t('art.series')}</span>
               <div className="chips">
-                <button type="button" className="chip" onClick={() => update({ series: '' })} aria-pressed={series === ''}>{t('art.all')}</button>
-                {seriesList.map((s) => <button key={s} type="button" className="chip" onClick={() => update({ series: s })} aria-pressed={series === s}>{s}</button>)}
+                <button type="button" className="chip" aria-pressed="true" onClick={() => update({ series: '' })}>{series} <span aria-hidden="true">✕</span><span className="sr-only">{t('art.clear')}</span></button>
               </div>
             </div>
           )}
         </div>
 
         <p className="mt-6 text-xs uppercase tracking-[0.18em] text-mut" aria-live="polite">
-          {list.length} {list.length === 1 ? t('art.work') : t('art.works')}{series ? ` · ${series}` : ''}
+          {list.length} {list.length === 1 ? t('art.work') : t('art.works')}{medium ? ` · ${t('art.cat.' + medium)}` : ''}{series ? ` · ${series}` : ''}
         </p>
 
         {list.length === 0 ? (
@@ -66,7 +82,7 @@ export default function Art() {
           </div>
         ) : (
           // Each work keeps its true proportions and hangs in a masonry, like a gallery wall.
-          <div className="masonry mt-8" key={show + '|' + series}>
+          <div className="masonry mt-8" key={show + '|' + medium + '|' + series}>
             {list.map((a, i) => <ArtCard key={a.slug} art={a} eager={i < 3} />)}
           </div>
         )}

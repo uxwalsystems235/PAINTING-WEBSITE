@@ -5,6 +5,7 @@ import { useContent } from '../lib/ContentContext'
 import { useT } from '../lib/LangContext'
 import { useUi } from '../lib/UiContext'
 import { usePageMeta } from '../lib/usePageMeta'
+import { scrollToY } from '../lib/smooth'
 import '../cause.css'
 
 // Where each "way to help" card leads, in the order of the admin list (cause.ways).
@@ -19,12 +20,13 @@ export default function Cause() {
     storyTitle: useContent('cause.storyTitle'), story: useContent('cause.story'),
     howTitle: useContent('cause.howTitle'), howSteps: useContent('cause.howSteps'),
     ways: useContent('cause.ways'), note: useContent('cause.note'),
+    reviewsTitle: useContent('cause.reviewsTitle'), reviews: useContent('cause.reviews').filter((r) => r.quote),
   }
   usePageMeta(c.eyebrow, c.lead)
 
   const scrollToDonate = (e) => {
     const el = document.getElementById('donate')
-    if (el) { e.preventDefault(); el.scrollIntoView({ behavior: 'smooth', block: 'start' }) } else openDonate()
+    if (el) { e.preventDefault(); scrollToY(el, true) } else openDonate()
   }
 
   return (
@@ -103,6 +105,23 @@ export default function Cause() {
                 : <Link key={(w.title || '') + i} to={to} className="way" data-reveal>{body}</Link>
             })}
           </div>
+        </section>
+      )}
+
+      {c.reviews.length > 0 && (
+        <section className="container cause-block" aria-labelledby="cause-reviews">
+          <span className="eyebrow" data-reveal>{t('cause.reviews')}</span>
+          <h2 id="cause-reviews" data-reveal>{c.reviewsTitle}</h2>
+          <ul className="cause-reviews">
+            {c.reviews.map((r, i) => (
+              <li key={(r.name || '') + i} className="review" data-reveal>
+                <blockquote>
+                  <p>{r.quote}</p>
+                  <footer><b>{r.name}</b>{r.role && <span>{r.role}</span>}</footer>
+                </blockquote>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 

@@ -6,7 +6,7 @@ import { useFetch, usePageTitle } from '../hooks.js'
 import { Badge, Check, Empty, ErrorBox, Loading, PageHeader, Pagination, TableWrap } from '../ui.jsx'
 import { formatDate } from '../util.js'
 
-const TABS = [['general', 'General'], ['acquisition', 'Acquisitions'], ['collaboration', 'Collaboration'], ['donation', 'Donations'], ['custom', 'Custom art'], ['newsletter', 'Newsletter']]
+const TABS = [['general', 'General'], ['acquisition', 'Acquisitions'], ['bulk', 'Bulk prints'], ['collaboration', 'Collaboration'], ['donation', 'Donations'], ['custom', 'Custom art'], ['newsletter', 'Newsletter']]
 const PAGE_SIZE = 20
 
 export default function Enquiries() {

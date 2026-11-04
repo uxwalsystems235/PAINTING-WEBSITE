@@ -125,6 +125,7 @@ test('orders list: filter by status, search, paging, newest first', async () => 
 
 test('settings drive shipping on real orders; checkoutEnabled=false gives 503', async () => {
   await admin.as('POST', '/api/admin/artworks', { body: art({ slug: 'ship-a', type: 'print', price: 1000, variants: [{ label: 'S', price: 1000 }] }) })
+  await admin.as('PUT', '/api/admin/settings', { body: { prints: { bulk: [] } } }) // no bulk discount: 5 copies must cost 5 × 1000
   const base = await place([{ slug: 'ship-a', variant: 'S' }])
   assert.equal(base.json.total, 1250)
 
@@ -202,4 +203,35 @@ test('CSV export neutralises formulas and escapes quotes/commas/newlines', async
   assert.ok(g.text.includes('"Q ""Quote"", Co"'))
   assert.ok(g.text.includes(`"'=HYPERLINK(""x"")\nsecond line"`))
   assert.equal((await admin.as('GET', '/api/admin/enquiries/export?kind=bogus')).status, 400)
+})
+
+test('prints of an original: size required, bulk tiers lower the unit price, quantity is capped, sold originals still sell prints', async () => {
+  await admin.as('POST', '/api/admin/artworks', { body: art({ slug: 'with-prints', price: 5000, printSizes: [{ label: 'A3', price: 1000 }, { label: 'A2', price: 2000 }], printNote: 'Giclée' }) })
+  await admin.as('PUT', '/api/admin/settings', { body: { shipping: { flat: 250, freeAbove: 10000 }, prints: { maxQty: 20, bulk: [{ minQty: 10, percentOff: 20 }, { minQty: 5, percentOff: 10 }] } } })
+  const pub = (await t.call('GET', '/api/public/settings')).json
+  assert.deepEqual(pub.prints, { maxQty: 20, bulk: [{ minQty: 5, percentOff: 10 }, { minQty: 10, percentOff: 20 }] })
+
+  assert.equal((await place([{ slug: 'with-prints', kind: 'print' }])).status, 400) // size required
+  assert.equal((await place([{ slug: 'with-prints', kind: 'print', variant: 'A0' }])).status, 400)
+  assert.equal((await place([{ slug: 'o1', kind: 'print', variant: 'A3' }])).status, 400) // no print sizes on that one
+
+  const r = await place([{ slug: 'with-prints', kind: 'print', variant: 'A3', qty: 6, price: 1 }], customer({ email: 'prints@example.com' }))
+  assert.equal(r.status, 201)
+  assert.equal(r.json.total, 6 * 900 + 250)
+  assert.equal(await isAvailable('with-prints'), true) // the original is not claimed by a print order
+  const o = await adminOrder(r.json.orderNumber)
+  assert.deepEqual(o.items.map((i) => [i.type, i.variant, i.qty, i.price, i.listPrice, i.discount]), [['print', 'A3', 6, 900, 1000, 10]])
+
+  const capped = await place([{ slug: 'with-prints', kind: 'print', variant: 'A2', qty: 500 }], customer({ email: 'cap@example.com' }))
+  assert.equal(capped.status, 201)
+  assert.equal(capped.json.total, 20 * 1600) // 20 copies at 20% off, free shipping above 10,000
+
+  // Both the original and a print of it in one order: the original is claimed, the print line stays orderable afterwards.
+  const both = await place([{ slug: 'with-prints' }, { slug: 'with-prints', kind: 'print', variant: 'A3', qty: 1 }], customer({ email: 'both@example.com' }))
+  assert.equal(both.status, 201)
+  assert.equal(await isAvailable('with-prints'), false)
+  const after = await place([{ slug: 'with-prints', kind: 'print', variant: 'A3' }], customer({ email: 'later@example.com' }))
+  assert.equal(after.status, 201)
+  assert.equal((await place([{ slug: 'with-prints' }], customer({ email: 'late2@example.com' }))).status, 409)
+  await admin.as('PUT', '/api/admin/settings', { body: { prints: { maxQty: 50, bulk: [] } } })
 })

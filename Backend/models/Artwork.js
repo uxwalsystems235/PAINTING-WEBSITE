@@ -19,6 +19,15 @@ const artworkSchema = new mongoose.Schema({
   imageAlt: { type: String, default: '' },
   poemSlug: { type: String, default: null },
   variants: { type: [new mongoose.Schema({ label: String, price: Number }, { _id: false })], default: [] },
+  // Prints of an original: sizes with their single-copy prices. Empty = no prints offered. Bulk discounts are
+  // site-wide (settings.prints.bulk) and applied per order line by quantity.
+  printSizes: { type: [new mongoose.Schema({ label: String, price: Number }, { _id: false })], default: [] },
+  printNote: { type: String, default: '' }, // e.g. "Giclée on archival cotton paper"
+  // Pre-orders: the original (still being painted) and/or its prints (run not yet printed) can be bought now and
+  // are dispatched later; preorderNote tells the buyer when, e.g. "Ships from 20 December 2026".
+  preorder: { type: Boolean, default: false },
+  printPreorder: { type: Boolean, default: false },
+  preorderNote: { type: String, default: '' },
   published: { type: Boolean, default: true },
   order: { type: Number, default: 0 },
 }, { timestamps: true })

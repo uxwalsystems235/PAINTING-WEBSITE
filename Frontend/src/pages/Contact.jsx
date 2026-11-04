@@ -6,7 +6,7 @@ import { useT } from '../lib/LangContext'
 import { usePageMeta } from '../lib/usePageMeta'
 
 // Subjects on the contact page. Each one is an enquiry `kind` the admin panel sorts into its own tab.
-const SUBJECTS = ['general', 'acquisition', 'collaboration', 'donation']
+const SUBJECTS = ['general', 'acquisition', 'bulk', 'collaboration', 'donation']
 
 // One form component serves the contact page (with a subject) and the custom-art enquiry.
 function EnquiryForm({ kind: fixedKind, initialSubject = 'general', artworkTitle = '', similarTo = '' }) {
@@ -49,11 +49,12 @@ function EnquiryForm({ kind: fixedKind, initialSubject = 'general', artworkTitle
             {SUBJECTS.map((s) => <option key={s} value={s}>{t('contact.subj.' + s)}</option>)}
           </select>
           {subject === 'donation' && <p className="mt-2 text-sm text-mut">{t('contact.donationHint')} <Link to="/cause#donate" className="underline">{t('contact.donationLink')}</Link>.</p>}
+          {subject === 'bulk' && <p className="mt-2 text-sm text-mut">{t('contact.bulkHint')}</p>}
         </div>
       )}
       {f('name', t('contact.name'), { required: true, autoComplete: 'name' })}
       {f('email', t('contact.email'), { type: 'email', required: true, autoComplete: 'email' })}
-      {!custom && subject === 'acquisition' && f('artwork', t('contact.artwork'))}
+      {!custom && (subject === 'acquisition' || subject === 'bulk') && f('artwork', t('contact.artwork'))}
       {custom && <>
         {f('style', t('contact.style'))}
         {f('size', t('contact.size'))}

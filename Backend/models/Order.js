@@ -9,7 +9,9 @@ const orderSchema = new mongoose.Schema({
     address: String, city: String, state: String, pin: String,
   },
   // `type` is a reserved key in mongoose schemas, so the item's type must be declared explicitly.
-  items: [{ slug: String, title: String, type: { type: String }, variant: String, price: Number, qty: Number }],
+  // price is the unit price actually charged; for prints listPrice is the single-copy price and discount the
+  // bulk percentage applied (0 when none).
+  items: [{ slug: String, title: String, type: { type: String }, variant: String, price: Number, qty: Number, listPrice: Number, discount: Number, preorder: Boolean, preorderNote: String }],
   subtotal: Number,
   shipping: Number,
   total: Number,

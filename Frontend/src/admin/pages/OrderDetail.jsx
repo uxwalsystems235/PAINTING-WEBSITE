@@ -107,7 +107,7 @@ export default function OrderDetail() {
               <thead><tr><th scope="col">Item</th><th scope="col">Type</th><th scope="col">Qty</th><th scope="col">Price</th></tr></thead>
               <tbody>
                 {order.items.map((i, n) => (
-                  <tr key={n}><td>{i.title}{i.variant ? <span className="block text-xs text-mut">{i.variant}</span> : null}</td><td>{i.type}</td><td>{i.qty}</td><td>{formatINR(i.price * i.qty)}</td></tr>
+                  <tr key={n}><td>{i.title}{i.variant ? <span className="block text-xs text-mut">{i.variant}</span> : null}{i.discount > 0 ? <span className="block text-xs text-mut">{formatINR(i.price)} each after {i.discount}% bulk discount (list {formatINR(i.listPrice)})</span> : null}{i.preorder ? <span className="block text-xs text-terracotta font-semibold">Pre-order{i.preorderNote ? ' · ' + i.preorderNote : ''}</span> : null}</td><td>{i.type}</td><td>{i.qty}</td><td>{formatINR(i.price * i.qty)}</td></tr>
                 ))}
               </tbody>
               <tfoot className="order-foot">
